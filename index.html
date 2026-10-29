@@ -110,6 +110,15 @@
            =================================================================== -->
       <section class="flower-activity-card" aria-label="Flower Addition II Activity">
         
+        <!-- Single "Count Again" Button in Top-Right Corner of Activity Area -->
+        <button type="button" class="activity-count-again-btn" id="btn-count-again" title="Start counting this round again" aria-label="Count this round again">
+          <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
+            <path d="M2 3v6h6"/>
+          </svg>
+          <span>Count Again</span>
+        </button>
+
         <!-- Large Green Question Banner (e.g. 2 + 2 = ?) -->
         <div class="math-question-banner">
           <div class="math-question-text" id="math-question-display">
@@ -133,16 +142,7 @@
           
           <!-- First Flower Group Container -->
           <div class="flower-group-container" id="container-group-1">
-            <div class="group-header-row">
-              <span class="group-header-tag">First Group</span>
-              <button type="button" class="box-recount-btn" id="recount-btn-group-1" data-box="flower-group-1" title="Count First Group again" aria-label="Count First Group again">
-                <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
-                  <path d="M2 3v6h6"/>
-                </svg>
-                <span>Count Again</span>
-              </button>
-            </div>
+            <div class="group-header-tag">First Group</div>
             <div class="flower-group-box" id="flower-group-1" title="First flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) with yellow centers -->
             </div>
@@ -153,16 +153,7 @@
 
           <!-- Second Flower Group Container -->
           <div class="flower-group-container" id="container-group-2">
-            <div class="group-header-row">
-              <span class="group-header-tag">Second Group</span>
-              <button type="button" class="box-recount-btn" id="recount-btn-group-2" data-box="flower-group-2" title="Count Second Group again" aria-label="Count Second Group again">
-                <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
-                  <path d="M2 3v6h6"/>
-                </svg>
-                <span>Count Again</span>
-              </button>
-            </div>
+            <div class="group-header-tag">Second Group</div>
             <div class="flower-group-box" id="flower-group-2" title="Second flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) with yellow centers -->
             </div>
@@ -173,16 +164,7 @@
 
           <!-- Combined Result Group Container -->
           <div class="flower-group-container flower-result-container" id="container-group-result">
-            <div class="group-header-row">
-              <span class="group-header-tag result-tag">Combined Total</span>
-              <button type="button" class="box-recount-btn" id="recount-btn-group-result" data-box="flower-group-result" title="Count Combined Total again" aria-label="Count Combined Total again">
-                <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
-                  <path d="M2 3v6h6"/>
-                </svg>
-                <span>Count Again</span>
-              </button>
-            </div>
+            <div class="group-header-tag result-tag">Combined Total</div>
             <div class="flower-group-box flower-combined-group-box" id="flower-group-result" title="Combined flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) showing the combined sum -->
             </div>

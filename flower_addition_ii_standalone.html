@@ -520,43 +520,93 @@ body {
 }
 
 /* ==========================================================================
-   VISUAL ADDITION EQUATION:
+   VISUAL ADDITION EQUATION & LAYOUT:
    [Group of flowers] + [Group of flowers] = [Combined group of flowers]
+   Balanced proportions, aligned heights, and single top-right Count Again button
    ========================================================================== */
+
+/* Single "Count Again" Button in Top-Right Corner of Activity Area */
+.activity-count-again-btn {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 10;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: #14532d; /* dark-green text */
+  background-color: #ffffff; /* white pill-shaped background */
+  border: 1.5px solid #86efac; /* thin light-green border */
+  border-radius: 9999px; /* pill shape */
+  padding: 5.5px 13px;
+  min-height: 32px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5.5px;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  line-height: 1.3;
+  user-select: none;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.activity-count-again-btn .recount-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  color: #16a34a; /* green reset icon */
+  stroke: #16a34a;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.activity-count-again-btn:hover {
+  background-color: #f0fdf4;
+  border-color: #4ade80;
+  color: #0f391e;
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 3px 8px rgba(22, 101, 52, 0.14);
+}
+
+.activity-count-again-btn:hover .recount-icon {
+  transform: rotate(-60deg);
+  stroke: #15803d;
+}
+
+.activity-count-again-btn:active {
+  transform: translateY(0) scale(0.97);
+  background-color: #dcfce7;
+}
+
+/* Horizontal Equation Wrapper: Perfectly aligns all 3 boxes */
 .flower-equation-wrapper {
   display: flex;
-  align-items: center;
+  align-items: stretch; /* All containers stretch to exact same height */
   justify-content: center;
   gap: 16px;
   width: 100%;
   max-width: 960px;
-  margin: 8px 0 24px 0;
+  margin: 10px 0 24px 0;
 }
 
+/* First & Second Group Containers: balanced, proportional width */
 .flower-group-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 130px;
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 140px;
 }
 
+/* Combined Total Container: wider proportion for up to 9 flowers in Level 3 */
 .flower-group-container.flower-result-container {
-  flex: 1.4;
-  min-width: 170px;
+  flex: 1.7 1 0;
+  min-width: 230px;
 }
 
-.group-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0 4px;
-  gap: 6px;
-  box-sizing: border-box;
-}
-
+/* Centered group header badges */
 .group-header-tag {
   font-size: 12px;
   font-weight: 800;
@@ -564,10 +614,11 @@ body {
   letter-spacing: 0.6px;
   color: #557242;
   background: #eaf5e6;
-  padding: 3px 10px;
+  padding: 4px 14px;
   border-radius: 9999px;
   border: 1px solid #c9e4c1;
   white-space: nowrap;
+  user-select: none;
 }
 
 .group-header-tag.result-tag {
@@ -576,70 +627,24 @@ body {
   border-color: #fde047;
 }
 
-/* "Count Again" White Pill-Shaped Button with Light-Green Border */
-.box-recount-btn {
-  font-family: var(--font-sans);
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #14532d; /* dark-green text */
-  background-color: #ffffff; /* white pill-shaped button */
-  border: 1.5px solid #86efac; /* thin light-green border */
-  border-radius: 9999px; /* pill shape */
-  padding: 3px 10px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  line-height: 1.35;
-  user-select: none;
-  white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.box-recount-btn .recount-icon {
-  width: 12.5px;
-  height: 12.5px;
-  flex-shrink: 0;
-  color: #16a34a; /* green circular reset icon */
-  stroke: #16a34a;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.box-recount-btn:hover {
-  background-color: #f0fdf4;
-  border-color: #4ade80;
-  color: #0f391e;
-  transform: translateY(-1px) scale(1.03);
-  box-shadow: 0 3px 8px rgba(22, 101, 52, 0.12);
-}
-
-.box-recount-btn:hover .recount-icon {
-  transform: rotate(-60deg);
-  stroke: #15803d;
-}
-
-.box-recount-btn:active {
-  transform: translateY(0) scale(0.97);
-  background-color: #dcfce7;
-}
-
 /* Pale-green containers with dashed border */
 .flower-group-box {
   background-color: var(--activity-green-container-bg);
   border: 3px dashed var(--activity-green-container-border);
   border-radius: var(--radius-md);
   padding: 14px 12px;
-  min-height: 160px;
+  min-height: 165px;
   width: 100%;
+  flex: 1; /* Stretch to fill container height so all 3 boxes have identical height & aligned edges */
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  align-content: center; /* Vertically centers flower rows inside the box */
   gap: 10px;
   transition: all 0.25s ease;
   position: relative;
+  box-sizing: border-box;
 }
 
 .flower-group-box:hover {
@@ -685,8 +690,20 @@ body {
   40%, 80% { transform: translateX(4px); }
 }
 
-/* Chunky orange plus & equals signs */
+/* Chunky orange plus & equals signs - vertically centered with dashed flower boxes */
 .math-operator-symbol {
+  font-family: var(--font-sans);
+  font-size: 42px;
+  font-weight: 900;
+  color: #f59e0b;
+  text-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+  flex-shrink: 0;
+  user-select: none;
+  animation: float-operator 2.5s ease-in-out infinite alternate;
+  transition: transform 0.25s ease, color 0.25s ease;
+  align-self: center;
+  margin-top: 24px; /* Centers operator with the flower boxes (compensating for header tag) */
+}
   font-family: var(--font-sans);
   font-size: 44px;
   font-weight: 900;
@@ -1376,9 +1393,18 @@ body {
 
 /* Tablet & Mobile Wrap for Equation */
 @media (max-width: 720px) {
-  .group-header-row {
-    justify-content: space-between;
-    gap: 6px;
+  .activity-count-again-btn {
+    top: 14px;
+    right: 14px;
+    font-size: 11px;
+    padding: 4px 10px;
+    min-height: 28px;
+    gap: 4.5px;
+  }
+
+  .activity-count-again-btn .recount-icon {
+    width: 12px;
+    height: 12px;
   }
 
   .flower-equation-wrapper {
@@ -1389,17 +1415,18 @@ body {
 
   .flower-group-container {
     min-width: 120px;
+    flex: 1 1 40%;
   }
 
   .flower-group-container.flower-result-container {
     width: 100%;
     min-width: 220px;
-    flex: auto;
+    flex: 1 1 100%;
     margin-top: 4px;
   }
 
   .flower-group-box {
-    min-height: 140px;
+    min-height: 145px;
     padding: 10px;
     gap: 8px;
   }
@@ -1421,6 +1448,7 @@ body {
 
   .math-operator-symbol {
     font-size: 38px;
+    margin-top: 20px;
   }
 
   .flower-btn {
@@ -1434,6 +1462,10 @@ body {
 }
 
 @media (max-width: 480px) {
+  .math-question-banner {
+    margin-top: 26px; /* provides breathing room for the top-right Count Again button */
+    margin-bottom: 16px;
+  }
   .tenali-nav-header {
     padding: 8px 14px;
   }
@@ -1621,6 +1653,15 @@ body {
            =================================================================== -->
       <section class="flower-activity-card" aria-label="Flower Addition II Activity">
         
+        <!-- Single "Count Again" Button in Top-Right Corner of Activity Area -->
+        <button type="button" class="activity-count-again-btn" id="btn-count-again" title="Start counting this round again" aria-label="Count this round again">
+          <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
+            <path d="M2 3v6h6"/>
+          </svg>
+          <span>Count Again</span>
+        </button>
+
         <!-- Large Green Question Banner (e.g. 2 + 2 = ?) -->
         <div class="math-question-banner">
           <div class="math-question-text" id="math-question-display">
@@ -1644,16 +1685,7 @@ body {
           
           <!-- First Flower Group Container -->
           <div class="flower-group-container" id="container-group-1">
-            <div class="group-header-row">
-              <span class="group-header-tag">First Group</span>
-              <button type="button" class="box-recount-btn" id="recount-btn-group-1" data-box="flower-group-1" title="Count First Group again" aria-label="Count First Group again">
-                <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
-                  <path d="M2 3v6h6"/>
-                </svg>
-                <span>Count Again</span>
-              </button>
-            </div>
+            <div class="group-header-tag">First Group</div>
             <div class="flower-group-box" id="flower-group-1" title="First flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) with yellow centers -->
             </div>
@@ -1664,16 +1696,7 @@ body {
 
           <!-- Second Flower Group Container -->
           <div class="flower-group-container" id="container-group-2">
-            <div class="group-header-row">
-              <span class="group-header-tag">Second Group</span>
-              <button type="button" class="box-recount-btn" id="recount-btn-group-2" data-box="flower-group-2" title="Count Second Group again" aria-label="Count Second Group again">
-                <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
-                  <path d="M2 3v6h6"/>
-                </svg>
-                <span>Count Again</span>
-              </button>
-            </div>
+            <div class="group-header-tag">Second Group</div>
             <div class="flower-group-box" id="flower-group-2" title="Second flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) with yellow centers -->
             </div>
@@ -1684,16 +1707,7 @@ body {
 
           <!-- Combined Result Group Container -->
           <div class="flower-group-container flower-result-container" id="container-group-result">
-            <div class="group-header-row">
-              <span class="group-header-tag result-tag">Combined Total</span>
-              <button type="button" class="box-recount-btn" id="recount-btn-group-result" data-box="flower-group-result" title="Count Combined Total again" aria-label="Count Combined Total again">
-                <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
-                  <path d="M2 3v6h6"/>
-                </svg>
-                <span>Count Again</span>
-              </button>
-            </div>
+            <div class="group-header-tag result-tag">Combined Total</div>
             <div class="flower-group-box flower-combined-group-box" id="flower-group-result" title="Combined flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) showing the combined sum -->
             </div>
@@ -2642,15 +2656,18 @@ body {
       qTarget.classList.remove('solved');
     }
 
-    // Determine flower size class based on answer total to keep layout neat
+    // Determine flower size class based on answer total to keep layout neat and balanced
     let flowerSizeClass = '';
-    let flowerPixelSize = 72;
+    let flowerPixelSize = 68;
     if (q.answer <= 4) {
       flowerSizeClass = 'size-lg';
-      flowerPixelSize = 80;
-    } else if (q.answer >= 7) {
+      flowerPixelSize = 76;
+    } else if (q.answer <= 6) {
+      flowerSizeClass = 'size-md';
+      flowerPixelSize = 64;
+    } else {
       flowerSizeClass = 'size-sm';
-      flowerPixelSize = 58;
+      flowerPixelSize = 54;
     }
 
     // 2. Render Group 1 Box (q.num1 flowers)
@@ -2856,37 +2873,50 @@ body {
     }
   }
 
-  // --- Reset / Recount Handler ---
-  // Allows child to recount the same group starting with a different flower
-  function resetBoxCounting(boxId) {
-    if (state.isAnswered) return;
+  // --- Reset Round Counting Handler ("Count Again") ---
+  // Restarts the current round's counting sequence from the beginning,
+  // resetting counting numbers and progress for this round without advancing
+  // the round or restarting the entire level.
+  function resetRoundCounting() {
+    state.boxCounters = {
+      'flower-group-1': 0,
+      'flower-group-2': 0,
+      'flower-group-result': 0
+    };
+    state.activeCountingBox = null;
 
-    const boxEl = document.getElementById(boxId);
-    if (!boxEl) return;
-
-    state.boxCounters[boxId] = 0;
-    if (state.activeCountingBox === boxId) {
-      state.activeCountingBox = null;
+    if (combinedCountTimer) {
+      clearTimeout(combinedCountTimer);
+      combinedCountTimer = null;
     }
 
-    boxEl.classList.remove('counting-active', 'box-completed', 'box-attention');
+    ['flower-group-1', 'flower-group-2', 'flower-group-result'].forEach(id => {
+      const boxEl = document.getElementById(id);
+      if (boxEl) {
+        boxEl.classList.remove('counting-active', 'box-completed', 'box-attention');
 
-    const flowers = boxEl.querySelectorAll('.flower-token');
-    flowers.forEach(flowerEl => {
-      flowerEl.dataset.counted = 'false';
-      flowerEl.dataset.countOrder = '';
-      flowerEl.classList.remove('counted', 'tapped', 'highlighted');
-      flowerEl.classList.add('uncounted');
+        const flowers = boxEl.querySelectorAll('.flower-token');
+        flowers.forEach(flowerEl => {
+          flowerEl.dataset.counted = 'false';
+          flowerEl.dataset.countOrder = '';
+          flowerEl.classList.remove('counted', 'tapped', 'highlighted');
+          flowerEl.classList.add('uncounted');
 
-      const textElem = flowerEl.querySelector('.flower-digit-text');
-      if (textElem) {
-        textElem.textContent = '';
-        textElem.classList.remove('revealed');
-        textElem.classList.add('hidden-digit');
+          const textElem = flowerEl.querySelector('.flower-digit-text');
+          if (textElem) {
+            textElem.textContent = '';
+            textElem.classList.remove('revealed');
+            textElem.classList.add('hidden-digit');
+          }
+        });
       }
     });
 
     audio.playPop(1);
+  }
+
+  function resetBoxCounting(boxId) {
+    resetRoundCounting();
   }
 
   let combinedCountTimer = null;
@@ -3288,18 +3318,15 @@ body {
       countHintBtn.addEventListener('click', triggerCountingHint);
     }
 
-    // Box Recount Buttons (Order-Irrelevant Counting Restart)
-    ['group-1', 'group-2', 'group-result'].forEach(suffix => {
-      const btn = document.getElementById(`recount-btn-${suffix}`);
-      if (btn) {
-        const targetBoxId = btn.dataset.box || (suffix === 'group-result' ? 'flower-group-result' : `flower-${suffix}`);
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          resetBoxCounting(targetBoxId);
-        });
-      }
-    });
+    // Single "Count Again" Button in Top-Right Corner of Activity Area
+    const countAgainBtn = document.getElementById('btn-count-again');
+    if (countAgainBtn) {
+      countAgainBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resetRoundCounting();
+      });
+    }
 
     // Teacher Voice & Sound Toggles
     function updateVoiceTogglesUI() {

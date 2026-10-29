@@ -779,15 +779,18 @@
       qTarget.classList.remove('solved');
     }
 
-    // Determine flower size class based on answer total to keep layout neat
+    // Determine flower size class based on answer total to keep layout neat and balanced
     let flowerSizeClass = '';
-    let flowerPixelSize = 72;
+    let flowerPixelSize = 68;
     if (q.answer <= 4) {
       flowerSizeClass = 'size-lg';
-      flowerPixelSize = 80;
-    } else if (q.answer >= 7) {
+      flowerPixelSize = 76;
+    } else if (q.answer <= 6) {
+      flowerSizeClass = 'size-md';
+      flowerPixelSize = 64;
+    } else {
       flowerSizeClass = 'size-sm';
-      flowerPixelSize = 58;
+      flowerPixelSize = 54;
     }
 
     // 2. Render Group 1 Box (q.num1 flowers)
@@ -993,37 +996,50 @@
     }
   }
 
-  // --- Reset / Recount Handler ---
-  // Allows child to recount the same group starting with a different flower
-  function resetBoxCounting(boxId) {
-    if (state.isAnswered) return;
+  // --- Reset Round Counting Handler ("Count Again") ---
+  // Restarts the current round's counting sequence from the beginning,
+  // resetting counting numbers and progress for this round without advancing
+  // the round or restarting the entire level.
+  function resetRoundCounting() {
+    state.boxCounters = {
+      'flower-group-1': 0,
+      'flower-group-2': 0,
+      'flower-group-result': 0
+    };
+    state.activeCountingBox = null;
 
-    const boxEl = document.getElementById(boxId);
-    if (!boxEl) return;
-
-    state.boxCounters[boxId] = 0;
-    if (state.activeCountingBox === boxId) {
-      state.activeCountingBox = null;
+    if (combinedCountTimer) {
+      clearTimeout(combinedCountTimer);
+      combinedCountTimer = null;
     }
 
-    boxEl.classList.remove('counting-active', 'box-completed', 'box-attention');
+    ['flower-group-1', 'flower-group-2', 'flower-group-result'].forEach(id => {
+      const boxEl = document.getElementById(id);
+      if (boxEl) {
+        boxEl.classList.remove('counting-active', 'box-completed', 'box-attention');
 
-    const flowers = boxEl.querySelectorAll('.flower-token');
-    flowers.forEach(flowerEl => {
-      flowerEl.dataset.counted = 'false';
-      flowerEl.dataset.countOrder = '';
-      flowerEl.classList.remove('counted', 'tapped', 'highlighted');
-      flowerEl.classList.add('uncounted');
+        const flowers = boxEl.querySelectorAll('.flower-token');
+        flowers.forEach(flowerEl => {
+          flowerEl.dataset.counted = 'false';
+          flowerEl.dataset.countOrder = '';
+          flowerEl.classList.remove('counted', 'tapped', 'highlighted');
+          flowerEl.classList.add('uncounted');
 
-      const textElem = flowerEl.querySelector('.flower-digit-text');
-      if (textElem) {
-        textElem.textContent = '';
-        textElem.classList.remove('revealed');
-        textElem.classList.add('hidden-digit');
+          const textElem = flowerEl.querySelector('.flower-digit-text');
+          if (textElem) {
+            textElem.textContent = '';
+            textElem.classList.remove('revealed');
+            textElem.classList.add('hidden-digit');
+          }
+        });
       }
     });
 
     audio.playPop(1);
+  }
+
+  function resetBoxCounting(boxId) {
+    resetRoundCounting();
   }
 
   let combinedCountTimer = null;
@@ -1425,18 +1441,15 @@
       countHintBtn.addEventListener('click', triggerCountingHint);
     }
 
-    // Box Recount Buttons (Order-Irrelevant Counting Restart)
-    ['group-1', 'group-2', 'group-result'].forEach(suffix => {
-      const btn = document.getElementById(`recount-btn-${suffix}`);
-      if (btn) {
-        const targetBoxId = btn.dataset.box || (suffix === 'group-result' ? 'flower-group-result' : `flower-${suffix}`);
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          resetBoxCounting(targetBoxId);
-        });
-      }
-    });
+    // Single "Count Again" Button in Top-Right Corner of Activity Area
+    const countAgainBtn = document.getElementById('btn-count-again');
+    if (countAgainBtn) {
+      countAgainBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resetRoundCounting();
+      });
+    }
 
     // Teacher Voice & Sound Toggles
     function updateVoiceTogglesUI() {
