@@ -162,12 +162,14 @@
 
   // =========================================================================
   // TEACHER VOICE ENGINE (Warm Indian Preschool Teacher Speech Synthesis)
-  // Gentle, patient, caring Indian English female teacher voice ('en-IN')
+  // Replicates exact Activity I voice profile: gentle, warm, patient Indian
+  // English female preschool teacher voice ('en-IN', rate: 0.83, pitch: 1.08)
   // =========================================================================
   class TeacherVoiceEngine {
     constructor() {
       this.selectedVoice = null;
       this.isVoiceReady = false;
+      this.activeUtterance = null;
       this.initVoiceList();
     }
 
@@ -176,53 +178,120 @@
 
       const load = () => {
         const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
+        if (voices && voices.length > 0) {
           this.selectBestIndianVoice(voices);
           this.isVoiceReady = true;
         }
       };
 
+      // 1. Attempt immediate load
       load();
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+
+      // 2. Event listener for asynchronous voice loading
+      if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
         window.speechSynthesis.onvoiceschanged = load;
       }
+      if (window.speechSynthesis.addEventListener) {
+        window.speechSynthesis.addEventListener('voiceschanged', load);
+      }
+
+      // 3. Robust polling fallback for browsers with lazy-loaded voice lists (e.g. Chrome, Edge on Windows)
+      let pollCount = 0;
+      const pollTimer = setInterval(() => {
+        pollCount++;
+        const voices = window.speechSynthesis.getVoices();
+        if ((voices && voices.length > 0 && this.selectedVoice) || pollCount > 12) {
+          clearInterval(pollTimer);
+        } else if (voices && voices.length > 0) {
+          load();
+        }
+      }, 200);
+    }
+
+    ensureVoice() {
+      if (!this.selectedVoice && 'speechSynthesis' in window) {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          this.selectBestIndianVoice(voices);
+          this.isVoiceReady = true;
+        }
+      }
+      return this.selectedVoice;
     }
 
     selectBestIndianVoice(voices) {
-      const indianFemaleKeywords = ['neerja', 'heera', 'swara', 'veena', 'lekha', 'isha', 'ananya', 'priya'];
+      if (!voices || voices.length === 0) return null;
 
-      // Priority 1: Indian English Female voice (e.g. Neerja Online Natural, Heera, Google en-IN, Veena)
+      // Exact Activity I Indian female teacher voice candidates
+      const indianFemaleKeywords = [
+        'neerja', 'heera', 'swara', 'veena', 'lekha', 'isha', 'ananya', 'priya', 'kavya', 'shruti', 'aditi'
+      ];
+      // Explicitly reject male voice tokens to avoid male Indian voice assignment
+      const maleKeywords = [
+        'ravi', 'prabhat', 'madhur', 'david', 'mark', 'george', 'richard', 'james', 'alex', 'daniel', 'fred', 'male'
+      ];
+
+      const isMale = (name) => {
+        const lower = (name || '').toLowerCase();
+        return maleKeywords.some(m => lower.includes(m)) && !lower.includes('female');
+      };
+
+      // Priority 1: Indian English Natural / Online Female voice (e.g. Neerja Online Natural)
       let best = voices.find(v => {
         const lang = (v.lang || '').toLowerCase();
         const name = (v.name || '').toLowerCase();
         const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+        const isNatural = name.includes('natural') || name.includes('online');
         const isFemale = indianFemaleKeywords.some(k => name.includes(k)) || name.includes('female');
-        return isIndian && isFemale;
+        return isIndian && isFemale && isNatural && !isMale(name);
       });
 
-      // Priority 2: Any en-IN voice
+      // Priority 2: Standard Indian English Female voice (e.g. Microsoft Heera, Veena, Neerja, Lekha, Isha)
       if (!best) {
         best = voices.find(v => {
           const lang = (v.lang || '').toLowerCase();
-          return lang.startsWith('en-in') || lang === 'en_in';
+          const name = (v.name || '').toLowerCase();
+          const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+          const isFemale = indianFemaleKeywords.some(k => name.includes(k)) || name.includes('female');
+          return isIndian && isFemale && !isMale(name);
         });
       }
 
-      // Priority 3: Hindi bilingual voice speaking English (hi-IN)
+      // Priority 3: Any en-IN voice that is not male (e.g. Google English (India))
       if (!best) {
         best = voices.find(v => {
           const lang = (v.lang || '').toLowerCase();
-          return lang.startsWith('hi-in') || lang === 'hi_in';
+          const name = (v.name || '').toLowerCase();
+          const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+          return isIndian && !isMale(name);
         });
       }
 
-      // Priority 4: Warm, gentle female English fallback (e.g. Samantha, Victoria, Hazel, Susan, Zira)
+      // Priority 4: Hindi bilingual voice speaking English (hi-IN)
       if (!best) {
-        const gentleFemale = ['samantha', 'victoria', 'hazel', 'susan', 'zira', 'karen', 'jenny', 'natural'];
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          return (lang.startsWith('hi-in') || lang === 'hi_in') && !isMale(name);
+        });
+      }
+
+      // Priority 5: Warm, gentle female English teacher fallback (e.g. Samantha, Victoria, Hazel, Susan, Zira)
+      if (!best) {
+        const gentleFemale = ['samantha', 'victoria', 'hazel', 'susan', 'zira', 'karen', 'jenny', 'natural', 'female'];
         best = voices.find(v => {
           const name = (v.name || '').toLowerCase();
           const lang = (v.lang || '').toLowerCase();
-          return lang.startsWith('en') && gentleFemale.some(k => name.includes(k));
+          return lang.startsWith('en') && gentleFemale.some(k => name.includes(k)) && !isMale(name);
+        });
+      }
+
+      // Priority 6: Any non-male English voice
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          return lang.startsWith('en') && !isMale(name);
         });
       }
 
@@ -232,6 +301,7 @@
       }
 
       this.selectedVoice = best;
+      return best;
     }
 
     getWord(n) {
@@ -248,7 +318,16 @@
       try {
         window.speechSynthesis.cancel(); // Stop any pending utterance to prevent overlapping speech
 
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        // Dynamically re-verify voice before speaking
+        this.ensureVoice();
+
         const utterance = new SpeechSynthesisUtterance(text);
+        this.activeUtterance = utterance; // Prevent garbage collection bug in Chrome
+
         if (this.selectedVoice) {
           utterance.voice = this.selectedVoice;
         }
@@ -258,15 +337,22 @@
           (this.selectedVoice.name || '').toLowerCase().includes('india')
         );
 
-        utterance.lang = isIndian ? 'en-IN' : (this.selectedVoice ? this.selectedVoice.lang : 'en-US');
-        utterance.rate = 0.83; // Slightly slow, patient, caring preschool pace
-        utterance.pitch = 1.08; // Warm, friendly, gentle teacher pitch
+        // Always prioritize en-IN language code for correct preschool teacher cadence
+        utterance.lang = isIndian ? (this.selectedVoice.lang || 'en-IN') : (this.selectedVoice ? this.selectedVoice.lang : 'en-IN');
+        utterance.rate = 0.83; // Exact Activity I rate: slightly slow, patient, caring preschool pace
+        utterance.pitch = 1.08; // Exact Activity I pitch: warm, friendly, gentle teacher pitch
         utterance.volume = 1.0;
 
-        if (onEnd) {
-          utterance.onend = () => { onEnd(); };
-          utterance.onerror = () => { onEnd(); };
-        }
+        const cleanup = () => {
+          this.activeUtterance = null;
+          if (onEnd) onEnd();
+        };
+
+        utterance.onend = cleanup;
+        utterance.onerror = (e) => {
+          console.warn('Teacher speech error:', e);
+          cleanup();
+        };
 
         window.speechSynthesis.speak(utterance);
       } catch (e) {
@@ -275,12 +361,12 @@
       }
     }
 
-    // Welcome greeting
+    // 1. Welcome Interaction (Exact Activity I)
     welcome(onEnd) {
-      this.speak("Hello, little gardener! Look at how the flowers combine, and let's find the total!", onEnd);
+      this.speak("Hello, little gardener! Are you ready to count some flowers?", onEnd);
     }
 
-    // Read question when tapping speaker icon
+    // 2. Read Question Interaction: "One plus two." (Exact Activity I)
     readQuestion(q, onEnd) {
       if (!q) return;
       const w1 = this.getWord(q.num1);
@@ -290,25 +376,31 @@
       this.speak(text, onEnd);
     }
 
-    // Single flower tap counting
+    // 3. Count Single Flower: "One!", "Two!", "Three!" (Exact Activity I)
     countFlower(n) {
       const word = this.getWord(n);
       const cap = word.charAt(0).toUpperCase() + word.slice(1);
       this.speak(cap + "!");
     }
 
-    // Guide equation when kid counts flowers or hint finishes
-    guideEquation(num1, num2, answer) {
-      const w1 = this.getWord(num1);
-      const w2 = this.getWord(num2);
+    // 4. Guide Counting: When all flowers are tapped -> "We have four flowers." (Exact Activity I)
+    guideCounting(num1, num2, answer) {
+      if (answer === undefined && num1 !== undefined) {
+        answer = num1;
+      }
       const wAns = this.getWord(answer);
-      const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
       const noun = answer === 1 ? 'flower' : 'flowers';
-      const text = `${cap1} flowers plus ${w2} flowers make ${wAns} ${noun} in total.`;
+      const text = `We have ${wAns} ${noun}.`;
       this.speak(text);
     }
 
-    // Correct answer celebration
+    // Alias for equation guidance to preserve Activity I voice line
+    guideEquation(num1, num2, answer) {
+      this.guideCounting(num1, num2, answer);
+    }
+
+    // 5. Correct Answer Interaction: (Exact Activity I)
+    // "Excellent! [num1] plus [num2] is [answer]. Good job!"
     celebrateCorrect(num1, num2, answer) {
       if (answer === undefined && state.currentQuestion) {
         answer = num1;
@@ -323,12 +415,24 @@
       this.speak(text);
     }
 
-    // Encouraging retry (Zero shame)
+    // 6. Incorrect Answer Interaction (Exact Activity I):
+    // “That's okay, little one! Let's count and add the flowers together.”
     encourageTryAgain() {
-      this.speak("That's okay, little one! Look at the combined flowers, and let's count together.");
+      this.speak("That's okay, little one! Let's count and add the flowers together.");
     }
 
-    // Level & Quest milestone completions
+    // 7. Hint Interaction: Directly triggers the sequential flower count (Exact Activity I)
+    startHint(onReady) {
+      if (onReady) onReady();
+    }
+
+    // 8. Next Question Interaction (Exact Activity I):
+    // "Ready for another little challenge? Let's go!"
+    nextChallenge(onReady) {
+      this.speak("Ready for another little challenge? Let's go!", onReady);
+    }
+
+    // 9. Completion Interaction (Exact Activity I):
     completion(level = 1) {
       if (level === 1) {
         this.speak("Wonderful! You can now add numbers to make four. Ready to learn to make six?");
@@ -909,7 +1013,7 @@
       if (feedbackRibbon) {
         feedbackRibbon.innerHTML = `
           <div class="feedback-msg try-again">
-            🌱 That's okay, little one! Look at the combined flowers and try again.
+            🌱 That's okay, little one! Let's count and add the flowers together.
           </div>
         `;
       }
@@ -1164,6 +1268,11 @@
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
         }
+      } else {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.resume();
+        }
+        teacherVoice.ensureVoice();
       }
     }
 
@@ -1237,11 +1346,16 @@
       if (!state.hasUserInteracted) {
         state.hasUserInteracted = true;
         audio.init();
-        teacherVoice.initVoiceList();
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.resume();
+        }
+        teacherVoice.ensureVoice();
       }
     }
 
-    window.addEventListener('pointerdown', handleFirstUserGesture, { once: true });
+    ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, handleFirstUserGesture, { once: true, passive: true });
+    });
 
     // Generate First Question & Start
     state.currentQuestion = generateQuestion();
