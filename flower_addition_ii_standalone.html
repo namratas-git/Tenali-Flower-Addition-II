@@ -1,0 +1,3011 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tenali Puzzles & Games - Flower Addition II</title>
+  <meta name="description" content="Interactive visual flower addition game for preschool children aged 4-5. See addition visually: [Group 1] + [Group 2] = [Combined Group]. Follows Tenali math curriculum visual design.">
+
+  <!-- Google Fonts: Serif for Tenali branding + Rounded Sans for child readability -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Fredoka:wght@400;600;700&family=Nunito:wght@700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+/* ==========================================================================
+   TENALI FLOWER ADDITION II - Visual Design System & Activity Styles
+   Exact Tenali Brand Identity & Visual Addition Equation System
+   ========================================================================== */
+
+/* --- CSS Variables & Theme Tokens --- */
+:root {
+  /* Tenali Dark Shell Palette */
+  --bg-tenali-dark: #160f0a;
+  --bg-tenali-surface: #221610;
+  --bg-tenali-card: #281a13;
+  --bg-tenali-card-border: #3d281c;
+  --bg-tenali-pill: #342217;
+  --bg-tenali-pill-hover: #452d1f;
+  
+  /* Orange Accents & Highlights */
+  --tenali-orange: #f97316;
+  --tenali-orange-glow: rgba(249, 115, 22, 0.45);
+  --tenali-orange-dark: #ea580c;
+  --tenali-orange-light: #fb923c;
+  --tenali-gold: #f59e0b;
+  --tenali-gold-soft: #fef3c7;
+  
+  /* Typography Colors */
+  --text-tenali-heading: #fff8f0;
+  --text-tenali-body: #d6c7bc;
+  --text-tenali-muted: #9e8d80;
+  
+  /* Activity Design Palette */
+  --activity-card-bg: #ffffff;
+  --activity-green-text: #2b7a37;
+  --activity-green-container-bg: #f0f8ec;
+  --activity-green-container-border: #7cb342;
+  --activity-green-container-border-dash: #689f38;
+  
+  /* Flower Colors (Exact Activity I Purple Blossom) */
+  --flower-purple-petal: #ab47bc;
+  --flower-purple-petal-dark: #8e24aa;
+  --flower-purple-petal-light: #ba68c8;
+  --flower-yellow-center: #ffd54f;
+  --flower-yellow-center-border: #f59e0b;
+  --flower-number-color: #261c14;
+  
+  /* Feedback Colors */
+  --feedback-success: #16a34a;
+  --feedback-success-bg: #dcfce7;
+  --feedback-gentle-try: #f59e0b;
+  --feedback-gentle-bg: #fef9c3;
+  
+  /* Typography */
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Nunito', 'Fredoka', 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Layout */
+  --max-content-width: 1040px;
+  --radius-lg: 28px;
+  --radius-md: 20px;
+  --radius-sm: 14px;
+}
+
+/* Global Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-tenali-dark);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 10% 40%, rgba(171, 71, 188, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 90% 70%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
+  color: var(--text-tenali-body);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* ==========================================================================
+   TOP NAVIGATION BAR (Exact Tenali Visual Identity)
+   ========================================================================== */
+.tenali-nav-header {
+  background-color: var(--bg-tenali-surface);
+  border-bottom: 1px solid var(--bg-tenali-card-border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.nav-left-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Guide Button with glowing orange pill */
+.guide-pill-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 16px var(--tenali-orange-glow);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.1;
+}
+
+.guide-pill-badge:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 0 22px rgba(249, 115, 22, 0.65);
+}
+
+.guide-pill-badge .guide-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.guide-pill-badge .guide-sub {
+  font-size: 9.5px;
+  opacity: 0.9;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+
+/* Tenali Logo Branding */
+.tenali-brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.tenali-logo-text {
+  font-family: 'DM Serif Display', var(--font-serif);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(180deg, #ffffff 30%, #e2d3c5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+/* Center Navigation Links */
+.nav-center-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-pill-item {
+  color: var(--text-tenali-muted);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.nav-pill-item:hover {
+  color: var(--text-tenali-heading);
+  background-color: var(--bg-tenali-pill);
+}
+
+.nav-pill-item.active {
+  color: #ffffff;
+  background-color: var(--bg-tenali-pill);
+  box-shadow: inset 0 0 0 1px var(--bg-tenali-card-border);
+}
+
+.nav-icon {
+  font-size: 14px;
+}
+
+/* Right Navigation Controls */
+.nav-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control-btn-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--bg-tenali-pill);
+  border: 1px solid var(--bg-tenali-card-border);
+  color: var(--text-tenali-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-btn-circle:hover {
+  background-color: var(--bg-tenali-pill-hover);
+  color: #ffffff;
+  border-color: var(--tenali-orange);
+  transform: translateY(-1px);
+}
+
+.user-avatar-pill {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   MAIN VIEWPORT & HUB CONTAINER
+   ========================================================================== */
+.main-viewport {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px 48px 16px;
+}
+
+.tenali-hub-card {
+  width: 100%;
+  max-width: var(--max-content-width);
+  background-color: var(--bg-tenali-surface);
+  border: 1px solid var(--bg-tenali-card-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+/* Sub-header inside Card */
+.tenali-sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pill-back-btn {
+  color: var(--text-tenali-muted);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: transparent;
+  border: 1px solid var(--bg-tenali-card-border);
+  transition: all 0.2s ease;
+}
+
+.pill-back-btn:hover {
+  background: var(--bg-tenali-pill);
+  border-color: var(--tenali-orange);
+}
+
+.level-badge-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tenali-orange-light);
+}
+
+.level-badge-indicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--tenali-orange);
+  box-shadow: 0 0 8px var(--tenali-orange);
+}
+
+/* Visible Teacher Voice Toggle Pill */
+.teacher-voice-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  color: var(--text-tenali-heading);
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.teacher-voice-toggle-btn:hover {
+  background: rgba(249, 115, 22, 0.22);
+  border-color: var(--tenali-orange);
+  transform: translateY(-1px);
+}
+
+.teacher-voice-toggle-btn.muted {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-tenali-muted);
+}
+
+.teacher-voice-toggle-btn #teacher-voice-status {
+  color: var(--tenali-orange-light);
+  font-weight: 800;
+}
+
+.teacher-voice-toggle-btn.muted #teacher-voice-status {
+  color: var(--text-tenali-muted);
+}
+
+.sub-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tenali Mascot & Title Row */
+.tenali-hero-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: left;
+  padding: 4px 0 10px 0;
+}
+
+.tenali-mascot-img {
+  width: 70px;
+  height: 102px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+  animation: mascot-float 3s ease-in-out infinite alternate;
+}
+
+@keyframes mascot-float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(-5px) rotate(1.5deg); }
+}
+
+.tenali-hero-text h1 {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-tenali-heading);
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+
+.tenali-hero-text p {
+  color: var(--text-tenali-muted);
+  font-size: 14.5px;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   THE WHITE ACTIVITY CARD (Tenali Flower Addition II Visual System)
+   Pure white card, large green question, dashed pale-green containers,
+   purple flower petals with yellow centers.
+   ========================================================================== */
+.flower-activity-card {
+  background-color: var(--activity-card-bg);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px 34px 24px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  border: 4px solid #ffffff;
+}
+
+/* Subtle corner decoration inside activity card */
+.flower-activity-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #7cb342 0%, #ffd54f 50%, #ab47bc 100%);
+}
+
+/* Question Header in Large Green Text */
+.math-question-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 22px;
+  position: relative;
+}
+
+.math-question-text {
+  font-family: var(--font-sans);
+  font-size: 54px;
+  font-weight: 900;
+  color: var(--activity-green-text);
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(43, 122, 55, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.math-question-text .math-num {
+  display: inline-block;
+  min-width: 32px;
+  text-align: center;
+}
+
+.math-question-text .math-op {
+  color: var(--activity-green-text);
+}
+
+.math-question-text .math-target {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 0 10px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.math-question-text .math-target.solved {
+  color: #15803d;
+  background-color: #dcfce7;
+  transform: scale(1.15);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
+}
+
+/* Audio Question Speaker Button */
+.audio-speak-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  color: #334155;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.audio-speak-btn:hover {
+  background: #e2e8f0;
+  transform: scale(1.08);
+}
+
+.audio-speak-btn.speaking {
+  animation: pulse-ring 1s infinite;
+  background: #fed7aa;
+  border-color: #f97316;
+  color: #c2410c;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* ==========================================================================
+   VISUAL ADDITION EQUATION:
+   [Group of flowers] + [Group of flowers] = [Combined group of flowers]
+   ========================================================================== */
+.flower-equation-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 960px;
+  margin: 8px 0 24px 0;
+}
+
+.flower-group-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 130px;
+}
+
+.flower-group-container.flower-result-container {
+  flex: 1.4;
+  min-width: 170px;
+}
+
+.group-header-tag {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #557242;
+  background: #eaf5e6;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  border: 1px solid #c9e4c1;
+}
+
+.group-header-tag.result-tag {
+  color: #854d0e;
+  background: #fef3c7;
+  border-color: #fde047;
+}
+
+/* Pale-green containers with dashed border */
+.flower-group-box {
+  background-color: var(--activity-green-container-bg);
+  border: 3px dashed var(--activity-green-container-border);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  min-height: 160px;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.flower-group-box:hover {
+  background-color: #e8f5e3;
+  border-color: var(--activity-green-container-border-dash);
+}
+
+/* Result Group Box styling (Distinctive Combined styling) */
+.flower-combined-group-box {
+  background-color: #f7fcf4;
+  border: 3.5px dashed #4d7c0f;
+  box-shadow: inset 0 0 14px rgba(101, 163, 13, 0.08);
+}
+
+.flower-combined-group-box:hover {
+  background-color: #eef8ea;
+  border-color: #3f6212;
+}
+
+.flower-group-box.counting-active {
+  border-color: var(--tenali-orange);
+  background-color: #fff7ed;
+  box-shadow: 0 0 18px rgba(249, 115, 22, 0.2);
+}
+
+/* Chunky orange plus & equals signs */
+.math-operator-symbol {
+  font-family: var(--font-sans);
+  font-size: 44px;
+  font-weight: 900;
+  color: #f59e0b;
+  text-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+  flex-shrink: 0;
+  user-select: none;
+  animation: float-operator 2.5s ease-in-out infinite alternate;
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.math-operator-symbol.highlighted {
+  color: #ea580c;
+  transform: scale(1.35);
+  text-shadow: 0 0 18px rgba(249, 115, 22, 0.9);
+  z-index: 5;
+}
+
+.math-equals-symbol {
+  animation-delay: 0.3s;
+}
+
+@keyframes float-operator {
+  0% { transform: scale(1) translateY(0); }
+  100% { transform: scale(1.08) translateY(-3px); }
+}
+
+/* ==========================================================================
+   FLOWER COMPONENT (Purple Petals, Yellow Center, Number Inside)
+   Scalloped petals, vibrant yellow disc, number inside yellow center
+   ========================================================================== */
+.flower-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.14));
+}
+
+.flower-token.size-lg {
+  width: 80px;
+  height: 80px;
+}
+
+.flower-token.size-sm {
+  width: 58px;
+  height: 58px;
+}
+
+.flower-token:hover {
+  transform: scale(1.1) rotate(3deg);
+  filter: drop-shadow(0 6px 12px rgba(171, 71, 188, 0.35));
+}
+
+.flower-token:active {
+  transform: scale(0.94);
+}
+
+/* Flower Tapped / Blossom Bounce Animation */
+.flower-token.tapped {
+  animation: flower-bounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes flower-bounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.24) rotate(-6deg); }
+  75% { transform: scale(0.95) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Flower Highlighted during counting hint */
+.flower-token.highlighted {
+  filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.85)) drop-shadow(0 4px 10px rgba(0,0,0,0.2));
+  transform: scale(1.22);
+  z-index: 5;
+}
+
+.flower-token.highlighted .flower-center-circle {
+  fill: #fff176 !important;
+  stroke: #f97316 !important;
+  stroke-width: 2.5 !important;
+}
+
+/* SVG internals */
+.flower-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.flower-petal-lobe {
+  fill: var(--flower-purple-petal);
+  transition: fill 0.2s ease;
+}
+
+.flower-center-circle {
+  fill: var(--flower-yellow-center);
+  stroke: var(--flower-yellow-center-border);
+  stroke-width: 1.5;
+  transition: all 0.2s ease;
+}
+
+.flower-digit-text {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  font-weight: 900;
+  fill: var(--flower-number-color);
+  user-select: none;
+  pointer-events: none;
+  transform-origin: 50px 50px;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+}
+
+/* Hidden state before child taps the flower */
+.flower-digit-text.hidden-digit {
+  opacity: 0;
+  transform: scale(0);
+}
+
+/* Revealed state with joyful pop-in animation when child taps */
+.flower-digit-text.revealed {
+  opacity: 1;
+  transform: scale(1);
+  animation: digit-pop-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes digit-pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  65% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Gentle pulse on uncounted flowers to invite child to tap */
+.flower-token.uncounted .flower-center-circle {
+  animation: center-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes center-pulse {
+  0%, 100% { stroke-width: 1.5; stroke: #f59e0b; }
+  50% { stroke-width: 2.4; stroke: #ea580c; }
+}
+
+.flower-token.counted .flower-center-circle {
+  stroke-width: 2.2;
+  stroke: #16a34a;
+}
+
+/* ==========================================================================
+   ANSWER SECTION & THREE FLOWER-SHAPED ANSWER BUTTONS
+   Numbers directly inside the flowers' yellow centres!
+   ========================================================================== */
+.answer-stage-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.answer-prompt-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #475569;
+  text-align: center;
+}
+
+.flower-answer-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+/* The three flower-shaped answer buttons */
+.flower-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  width: 105px;
+  height: 105px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.15));
+  border-radius: 50%;
+}
+
+.flower-btn:hover {
+  transform: scale(1.12) translateY(-4px);
+  filter: drop-shadow(0 10px 20px rgba(171, 71, 188, 0.35));
+}
+
+.flower-btn:focus-visible {
+  outline: 3px solid var(--tenali-orange);
+  outline-offset: 4px;
+}
+
+.flower-btn:active {
+  transform: scale(0.96) translateY(2px);
+}
+
+/* Correct Flower Selection */
+.flower-btn.correct {
+  animation: answer-celebrate 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  filter: drop-shadow(0 0 24px rgba(34, 197, 94, 0.75));
+}
+
+@keyframes answer-celebrate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25) rotate(8deg); }
+  75% { transform: scale(1.15) rotate(-6deg); }
+  100% { transform: scale(1.18) rotate(0deg); }
+}
+
+/* Incorrect Flower Selection (Gentle Wobble, No penalty) */
+.flower-btn.incorrect {
+  animation: gentle-wobble 0.5s ease-in-out;
+  filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.6));
+}
+
+@keyframes gentle-wobble {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px) rotate(-4deg); }
+  40%, 80% { transform: translateX(8px) rotate(4deg); }
+}
+
+/* ==========================================================================
+   INTERACTIVE FEEDBACK BANNER & NEXT BUTTON
+   ========================================================================== */
+.feedback-ribbon {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+.feedback-msg {
+  font-size: 19px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 22px;
+  border-radius: 9999px;
+  animation: slide-fade-in 0.3s ease-out;
+}
+
+.feedback-msg.success {
+  background-color: var(--feedback-success-bg);
+  color: var(--feedback-success);
+  border: 1px solid #86efac;
+}
+
+.feedback-msg.try-again {
+  background-color: var(--feedback-gentle-bg);
+  color: #b45309;
+  border: 1px solid #fde047;
+}
+
+@keyframes slide-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cheerful Next Button */
+.next-question-btn {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 32px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 20px var(--tenali-orange-glow);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: pop-appear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.next-question-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.6);
+}
+
+.next-question-btn:active {
+  transform: scale(0.98);
+}
+
+@keyframes pop-appear {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   ACTIVITY HELPER TOOLBAR (Count with me, Hint, Sound)
+   ========================================================================== */
+.activity-helpers-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.helper-action-btn {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  color: #334155;
+  border-radius: 9999px;
+  padding: 9px 20px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+
+.helper-action-btn:hover {
+  background: #edf2f7;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.helper-action-btn.hint-pulse {
+  animation: glow-hint 1.8s infinite;
+  border-color: #f59e0b;
+  background-color: #fffbeb;
+  color: #b45309;
+}
+
+@keyframes glow-hint {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+/* ==========================================================================
+   PROGRESS TRACKER & STAR METER
+   ========================================================================== */
+.quest-progress-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-tenali-card);
+  border: 1px solid var(--bg-tenali-card-border);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stars-track-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stars-track-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-tenali-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stars-meter-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.star-slot {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-block;
+}
+
+.star-slot.earned {
+  color: #facc15;
+  text-shadow: 0 0 12px rgba(250, 204, 21, 0.6);
+  animation: star-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes star-pop {
+  0% { transform: scale(0.3) rotate(-30deg); }
+  70% { transform: scale(1.4) rotate(15deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.score-stats-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 5px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-chip.streak {
+  color: var(--tenali-orange-light);
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+/* ==========================================================================
+   CARDS (Guided Learning Journey & Today's Quest)
+   ========================================================================== */
+.tenali-bottom-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tenali-orange-card {
+  background: linear-gradient(180deg, rgba(234, 88, 12, 0.07) 0%, rgba(234, 88, 12, 0.02) 100%);
+  border: 1.5px solid rgba(249, 115, 22, 0.5);
+  border-radius: var(--radius-md);
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.tenali-orange-card:hover {
+  border-color: var(--tenali-orange);
+  background: linear-gradient(180deg, rgba(234, 88, 12, 0.12) 0%, rgba(234, 88, 12, 0.04) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15);
+}
+
+.orange-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.orange-card-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.orange-card-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--tenali-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.orange-card-desc {
+  font-size: 13.5px;
+  color: var(--text-tenali-muted);
+}
+
+.orange-card-arrow {
+  font-size: 20px;
+  color: var(--tenali-orange);
+  transition: transform 0.2s ease;
+}
+
+.tenali-orange-card:hover .orange-card-arrow {
+  transform: translateX(4px);
+}
+
+/* ==========================================================================
+   LEVEL SWITCHER / DIFFICULTY BAR
+   ========================================================================== */
+.level-switcher-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-tenali-card);
+  border: 1px solid var(--bg-tenali-card-border);
+  border-radius: 9999px;
+  padding: 6px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.level-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tenali-muted);
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.level-toggle-btn:hover {
+  color: #ffffff;
+}
+
+.level-toggle-btn.active {
+  background: var(--tenali-orange);
+  color: #ffffff;
+  box-shadow: 0 2px 10px var(--tenali-orange-glow);
+}
+
+/* ==========================================================================
+   CONFETTI CANVAS & CELEBRATION MODAL
+   ========================================================================== */
+#confetti-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Modal Overlay */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 6, 4, 0.85);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-dialog {
+  background: var(--bg-tenali-surface);
+  border: 1.5px solid var(--tenali-orange);
+  border-radius: var(--radius-lg);
+  max-width: 540px;
+  width: 100%;
+  padding: 30px;
+  color: var(--text-tenali-body);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-backdrop.active .modal-dialog {
+  transform: scale(1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-tenali-heading);
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tenali-muted);
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-close-btn:hover {
+  color: #ffffff;
+}
+
+.modal-body {
+  font-size: 15px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-body p {
+  color: var(--text-tenali-body);
+}
+
+.modal-guide-tip {
+  background: rgba(249, 115, 22, 0.08);
+  border-left: 3px solid var(--tenali-orange);
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13.5px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (Desktop, Tablet, Mobile)
+   ========================================================================== */
+@media (max-width: 920px) {
+  .nav-center-links {
+    display: none;
+  }
+  
+  .tenali-hero-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .tenali-hero-text h1 {
+    font-size: 26px;
+  }
+
+  .flower-token {
+    width: 62px;
+    height: 62px;
+  }
+
+  .flower-token.size-lg {
+    width: 70px;
+    height: 70px;
+  }
+
+  .flower-token.size-sm {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* Tablet & Mobile Wrap for Equation */
+@media (max-width: 720px) {
+  .flower-equation-wrapper {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .flower-group-container {
+    min-width: 120px;
+  }
+
+  .flower-group-container.flower-result-container {
+    width: 100%;
+    min-width: 220px;
+    flex: auto;
+    margin-top: 4px;
+  }
+
+  .flower-group-box {
+    min-height: 140px;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .flower-token {
+    width: 58px;
+    height: 58px;
+  }
+
+  .flower-token.size-lg {
+    width: 66px;
+    height: 66px;
+  }
+
+  .flower-token.size-sm {
+    width: 48px;
+    height: 48px;
+  }
+
+  .math-operator-symbol {
+    font-size: 38px;
+  }
+
+  .flower-btn {
+    width: 92px;
+    height: 92px;
+  }
+
+  .math-question-text {
+    font-size: 42px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tenali-nav-header {
+    padding: 8px 14px;
+  }
+  
+  .guide-pill-badge {
+    padding: 5px 12px;
+  }
+  
+  .guide-pill-badge .guide-title {
+    font-size: 13px;
+  }
+  
+  .tenali-logo-text {
+    font-size: 20px;
+  }
+  
+  .tenali-hub-card {
+    padding: 16px 12px;
+    border-radius: 20px;
+  }
+  
+  .tenali-sub-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .teacher-voice-toggle-btn {
+    font-size: 11.5px;
+    padding: 4px 10px;
+  }
+  
+  .flower-activity-card {
+    padding: 18px 10px 24px 10px;
+    border-radius: 20px;
+  }
+  
+  .math-question-text {
+    font-size: 36px;
+    gap: 10px;
+  }
+  
+  .flower-token {
+    width: 50px;
+    height: 50px;
+  }
+
+  .flower-token.size-lg {
+    width: 58px;
+    height: 58px;
+  }
+
+  .flower-token.size-sm {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .flower-btn {
+    width: 82px;
+    height: 82px;
+  }
+  
+  .flower-answer-buttons {
+    gap: 16px;
+  }
+
+  .math-operator-symbol {
+    font-size: 32px;
+  }
+
+  .group-header-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+  
+  .quest-progress-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .stars-meter-row {
+    gap: 4px;
+  }
+
+  .star-slot {
+    font-size: 18px;
+  }
+}
+</style>
+</head>
+<body>
+
+  <!-- =======================================================================
+       TOP NAVIGATION BAR (Authentic Tenali Design System)
+       ======================================================================= -->
+  <header class="tenali-nav-header">
+    <div class="nav-left-group">
+      <!-- Glowing Orange Guide Badge -->
+      <a href="#guide" id="guide-pill-btn" class="guide-pill-badge" title="Open Learning Guide & Tips">
+        <span class="guide-title">ðŸ§­ Guide</span>
+        <span class="guide-sub">v1.2 Visual</span>
+      </a>
+
+      <!-- Tenali Brand Logo -->
+      <a href="#" class="tenali-brand" title="Tenali">
+        <span class="tenali-logo-text">Tenali</span>
+      </a>
+    </div>
+
+    <!-- Center Navigation Links -->
+    <nav class="nav-center-links" aria-label="Main Navigation">
+      <a href="#" class="nav-pill-item"><span class="nav-icon">ðŸ </span> Home</a>
+      <a href="#" class="nav-pill-item active"><span class="nav-icon">ðŸ§©</span> All Puzzles</a>
+      <a href="#" class="nav-pill-item"><span class="nav-icon">ðŸŒ¸</span> Flower Math II</a>
+      <a href="#" class="nav-pill-item"><span class="nav-icon">ðŸ–¼ï¸</span> Showcase</a>
+      <a href="#" class="nav-pill-item"><span class="nav-icon">â–¶ï¸</span> Live Demo</a>
+      <a href="#" class="nav-pill-item"><span class="nav-icon">âš¡</span> Features</a>
+      <a href="#" class="nav-pill-item"><span class="nav-icon">ðŸ“š</span> Curriculum</a>
+    </nav>
+
+    <!-- Right Controls -->
+    <div class="nav-right-controls">
+      <button id="btn-sound-toggle" class="control-btn-circle" title="Toggle Sound & Voice" aria-label="Toggle Sound">
+        ðŸ”Š
+      </button>
+      <button class="control-btn-circle" title="Theme Mode" aria-label="Theme Mode">
+        â˜€ï¸
+      </button>
+      <button class="control-btn-circle modal-close-trigger" title="Settings" aria-label="Settings">
+        âš™ï¸
+      </button>
+      <div class="user-avatar-pill" title="Student Profile" aria-label="Student Profile">
+        ðŸ§’
+      </div>
+    </div>
+  </header>
+
+  <!-- =======================================================================
+       MAIN VIEWPORT & TENALI SHELL (Tenali Dark Amber & Brown Theme)
+       ======================================================================= -->
+  <main class="main-viewport">
+    
+    <div class="tenali-hub-card">
+      
+      <!-- Sub-header inside Card -->
+      <div class="tenali-sub-header">
+        <a href="#" class="pill-back-btn" title="Back to Overview">
+          â† Overview
+        </a>
+
+        <div class="level-badge-indicator">
+          <span class="dot"></span>
+          <span id="level-badge-text">Level 1: Totals up to 4</span>
+        </div>
+
+        <!-- Visible Teacher Voice Toggle for Parents & Teachers -->
+        <button id="teacher-voice-toggle-btn" class="teacher-voice-toggle-btn" title="Toggle Indian Teacher Narration" aria-label="Toggle Teacher Voice">
+          ðŸ‘©â€ðŸ« Teacher Voice: <span id="teacher-voice-status">ON</span>
+        </button>
+
+        <div class="sub-header-actions">
+          <button class="control-btn-circle" title="Menu" aria-label="Menu">
+            â˜°
+          </button>
+        </div>
+      </div>
+
+      <!-- Hero Mascot Banner -->
+      <div class="tenali-hero-banner">
+        <!-- Exact Tenali Mascot Illustration -->
+        <img src="data:image/png;base64,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" class="tenali-mascot-img" alt="Tenali scholar mascot" width="70" height="102">
+
+        <div class="tenali-hero-text">
+          <h1>Tenali Puzzles & Games</h1>
+          <p>Explore 90+ algorithmically generated math and reasoning games</p>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           THE WHITE ACTIVITY CARD (Flower Addition II Design)
+           Preserves exact visual distinction: pure white card, large green
+           equation, dashed pale-green containers, purple & yellow flowers.
+           Features visual representation:
+           [Group 1] + [Group 2] = [Combined Group]
+           =================================================================== -->
+      <section class="flower-activity-card" aria-label="Flower Addition II Activity">
+        
+        <!-- Large Green Question Banner (e.g. 2 + 2 = ?) -->
+        <div class="math-question-banner">
+          <div class="math-question-text" id="math-question-display">
+            <span class="math-num" id="q-num1">2</span>
+            <span class="math-op">+</span>
+            <span class="math-num" id="q-num2">2</span>
+            <span class="math-op">=</span>
+            <span class="math-target" id="q-target">?</span>
+          </div>
+
+          <button id="audio-speak-btn" class="audio-speak-btn" title="Tap speaker to hear question" aria-label="Listen to Question">
+            ðŸ”Š
+          </button>
+        </div>
+
+        <!-- ===============================================================
+             VISUAL ADDITION EQUATION:
+             [Group of flowers] + [Group of flowers] = [Combined group of flowers]
+             =============================================================== -->
+        <div class="flower-equation-wrapper" id="flower-equation-wrapper">
+          
+          <!-- First Flower Group Container -->
+          <div class="flower-group-container" id="container-group-1">
+            <div class="group-header-tag">First Group</div>
+            <div class="flower-group-box" id="flower-group-1" title="First flower group - tap to count!">
+              <!-- Injected by game.js: purple flower(s) with yellow centers -->
+            </div>
+          </div>
+
+          <!-- Chunky Orange Plus Sign -->
+          <div class="math-operator-symbol math-plus-symbol" aria-hidden="true">+</div>
+
+          <!-- Second Flower Group Container -->
+          <div class="flower-group-container" id="container-group-2">
+            <div class="group-header-tag">Second Group</div>
+            <div class="flower-group-box" id="flower-group-2" title="Second flower group - tap to count!">
+              <!-- Injected by game.js: purple flower(s) with yellow centers -->
+            </div>
+          </div>
+
+          <!-- Chunky Orange Equals Sign -->
+          <div class="math-operator-symbol math-equals-symbol" aria-hidden="true">=</div>
+
+          <!-- Combined Result Group Container -->
+          <div class="flower-group-container flower-result-container" id="container-group-result">
+            <div class="group-header-tag result-tag">Combined Total</div>
+            <div class="flower-group-box flower-combined-group-box" id="flower-group-result" title="Combined flower group - always shows the total sum!">
+              <!-- Injected by game.js: purple flower(s) showing the combined sum -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Answer Section with Three Flower-Shaped Buttons -->
+        <!-- Numbers appear DIRECTLY inside the yellow centres, never separate! -->
+        <div class="answer-stage-container">
+          <div class="answer-prompt-text">
+            ðŸ‘‰ Look at the flowers in the equation! Tap the flower showing the total:
+          </div>
+
+          <div class="flower-answer-buttons" id="flower-answer-buttons">
+            <!-- Injected by game.js: 3 flower buttons with yellow centres and numbers -->
+          </div>
+        </div>
+
+        <!-- Interactive Cheerful Feedback & Next Question Button -->
+        <div class="feedback-ribbon" id="feedback-ribbon" aria-live="polite">
+          <!-- Populated when user selects an answer -->
+        </div>
+
+        <!-- Activity Helpers Toolbar -->
+        <div class="activity-helpers-bar">
+          <button id="btn-count-hint" class="helper-action-btn" title="Light up flowers one by one across the equation">
+            ðŸ’¡ Count with Me
+          </button>
+        </div>
+
+      </section>
+
+      <!-- Level Difficulty Switcher -->
+      <div class="level-switcher-bar">
+        <button class="level-toggle-btn active" data-level="1">Level 1: Totals up to 4</button>
+        <button class="level-toggle-btn" data-level="2">Level 2: Totals up to 6</button>
+        <button class="level-toggle-btn" data-level="3">Level 3: Totals up to 9</button>
+      </div>
+
+      <!-- Progress Tracking Strip with Stars -->
+      <div class="quest-progress-strip">
+        <div class="stars-track-wrap">
+          <span class="stars-track-label">Quest Stars:</span>
+          <div class="stars-meter-row">
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+            <span class="star-slot">â­</span>
+          </div>
+        </div>
+
+        <div class="score-stats-group">
+          <span class="stat-chip streak">
+            ðŸ”¥ <span id="stat-streak-val">0</span> Streak
+          </span>
+          <span class="stat-chip">
+            ðŸŽ¯ Preschool Math 4â€“5
+          </span>
+        </div>
+      </div>
+
+      <!-- ===================================================================
+           BOTTOM CARDS (Guided Learning Journey & Today's Quest)
+           =================================================================== -->
+      <div class="tenali-bottom-cards-grid">
+        
+        <!-- Guided Learning Journey Card -->
+        <a href="#journey" class="tenali-orange-card modal-close-trigger" title="Guided Learning Journey">
+          <div class="orange-card-left">
+            <div class="orange-card-title">
+              â­ Guided Learning Journey
+            </div>
+            <div class="orange-card-desc">
+              Embark on a structured, sequential math learning path with checkpoints.
+            </div>
+          </div>
+          <div class="orange-card-arrow">âž”</div>
+        </a>
+
+        <!-- Today's Quest Card -->
+        <a href="#quest" class="tenali-orange-card modal-close-trigger" title="Today's Quest">
+          <div class="orange-card-left">
+            <div class="orange-card-tag">ðŸš€ TODAY'S QUEST</div>
+            <div class="orange-card-title">
+              Basic Arithmetic: Flower Addition II
+            </div>
+            <div class="orange-card-desc">
+              Visual addition: [Group 1] + [Group 2] = [Combined Group] &bull; single-digit totals up to 9
+            </div>
+          </div>
+          <div class="orange-card-arrow">âž”</div>
+        </a>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- =======================================================================
+       CONFETTI CANVAS & MODALS
+       ======================================================================= -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Learning Guide Modal (Triggered by Orange Guide Badge) -->
+  <div id="guide-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="guide-title" class="modal-title">ðŸ§­ Tenali Learning Guide</h2>
+        <button class="modal-close-btn modal-close-trigger" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Teaching Method for Ages 4â€“5 (Concrete to Representational Addition):</strong></p>
+        <p>
+          In <strong>Flower Addition II</strong>, children see arithmetic visually represented as two sets of objects combining into one unified total group:
+        </p>
+        
+        <div class="modal-guide-tip">
+          ðŸŒ¸ <strong>[Group 1]</strong> shows the first set of flowers.<br>
+          ðŸŒ¸ <strong>[Group 2]</strong> shows the added set of flowers.<br>
+          ðŸŒ¸ <strong>[Combined Group]</strong> shows both groups united into the complete sum!<br>
+          ðŸŒ¸ <strong>Answer Buttons:</strong> Child matches the combined total with the flower-shaped number button!
+        </div>
+
+        <p>
+          <strong>Tactile & Positive:</strong> Children can tap flowers anytime to hear counting sounds.
+          Incorrect choices trigger gentle encouragement with zero penalties. Tap <strong>"ðŸ’¡ Count with Me"</strong> anytime for animated guided counting across the entire equation!
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="next-question-btn modal-close-trigger">Got It!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quest Complete Celebration Modal -->
+  <div id="quest-complete-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="text-align: center;">
+      <img src="data:image/png;base64,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" alt="Tenali scholar mascot" width="75" height="110" style="margin: 0 auto; display: block; filter: drop-shadow(0 4px 16px rgba(249,115,22,0.45));">
+      <h2 class="modal-title" id="modal-complete-title" style="color: var(--tenali-orange-light); font-size: 28px; margin-top: 10px;">
+        Level 1 Completed!
+      </h2>
+      <div class="modal-body">
+        <p style="font-size: 17px; font-weight: 700; color: #ffffff;" id="modal-complete-stars-text">
+          You earned 10 â­ in Level 1!
+        </p>
+        <p id="modal-complete-desc-text">
+          Wonderful! ðŸŒ¸ You can now add numbers to make 4. Ready to learn to make 6?
+        </p>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button id="btn-play-again" class="next-question-btn">
+          Start Next Level
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+/**
+ * Tenali Flower Addition II Game Engine
+ * Visual Addition for Foundational Numeracy (Ages 4-5)
+ * [Group 1 of flowers] + [Group 2 of flowers] = [Combined group of flowers]
+ * Features Web Audio synthesizer, Indian Preschool Teacher Speech Synthesis,
+ * dynamic SVG flowers, tactile visual counting, and positive reinforcement.
+ */
+
+(function () {
+  'use strict';
+
+  // --- Flower Color Themes (Rotates with each new question) ---
+  const FLOWER_PALETTES = [
+    { name: 'Classic Purple', petal: '#ab47bc', petalDark: '#8e24aa', petalLight: '#ba68c8' }, // Authentic Tenali Blossom
+    { name: 'Sky Cyan', petal: '#0ea5e9', petalDark: '#0284c7', petalLight: '#38bdf8' },
+    { name: 'Rose Blossom', petal: '#f43f5e', petalDark: '#e11d48', petalLight: '#fb7185' },
+    { name: 'Sunny Tangerine', petal: '#f97316', petalDark: '#ea580c', petalLight: '#fb923c' },
+    { name: 'Garden Emerald', petal: '#10b981', petalDark: '#059669', petalLight: '#34d399' },
+    { name: 'Royal Violet', petal: '#8b5cf6', petalDark: '#7c3aed', petalLight: '#a78bfa' },
+    { name: 'Sweet Magenta', petal: '#d946ef', petalDark: '#c026d3', petalLight: '#f0abfc' },
+    { name: 'Lagoon Teal', petal: '#14b8a6', petalDark: '#0d9488', petalLight: '#2dd4bf' }
+  ];
+
+  // --- Game State ---
+  const state = {
+    level: 1, // 1: totals up to 4, 2: totals up to 6, 3: totals up to 9
+    currentQuestion: null,
+    selectedAnswer: null,
+    isAnswered: false,
+    starsEarned: 0,
+    maxStars: 10,
+    currentStreak: 0,
+    soundEnabled: true,
+    voiceEnabled: true,
+    isCountingHintActive: false,
+    paletteIndex: 0,
+    hasUserInteracted: false,
+    hasWelcomed: false
+  };
+
+  // =========================================================================
+  // SOUND ENGINE (Zero-Dependency Web Audio API Synthesizer)
+  // 100% offline, standalone & reliable across all devices
+  // =========================================================================
+  class SoundEngine {
+    constructor() {
+      this.ctx = null;
+    }
+
+    init() {
+      if (!this.ctx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          this.ctx = new AudioContext();
+        }
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
+
+    // Gentle musical bubble pop when tapping a flower (pitch scales with count index 1..9)
+    playPop(index = 1) {
+      if (!state.soundEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const baseFreq = 320 + (index * 45);
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.6, this.ctx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.14);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.15);
+    }
+
+    // Cheerful arpeggio fanfare for correct answer (C5, E5, G5, C6)
+    playSuccessFanfare() {
+      if (!state.soundEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.08);
+
+        gain.gain.setValueAtTime(0.001, this.ctx.currentTime + i * 0.08);
+        gain.gain.linearRampToValueAtTime(0.25, this.ctx.currentTime + i * 0.08 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + i * 0.08 + 0.35);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(this.ctx.currentTime + i * 0.08);
+        osc.stop(this.ctx.currentTime + i * 0.08 + 0.38);
+      });
+    }
+
+    // Warm, gentle sine pitch ramp for incorrect try (no harsh buzzers)
+    playGentleTryAgain() {
+      if (!state.soundEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(380, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(240, this.ctx.currentTime + 0.28);
+
+      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.32);
+    }
+
+    // Sparkle chime when a gold quest star is earned
+    playStarEarned() {
+      if (!state.soundEnabled) return;
+      this.init();
+      if (!this.ctx) return;
+
+      const notes = [880, 1174.66, 1396.91, 1760];
+      notes.forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.06);
+
+        gain.gain.setValueAtTime(0.18, this.ctx.currentTime + i * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.06 + 0.3);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(this.ctx.currentTime + i * 0.06);
+        osc.stop(this.ctx.currentTime + i * 0.06 + 0.32);
+      });
+    }
+  }
+
+  const audio = new SoundEngine();
+
+  // =========================================================================
+  // TEACHER VOICE ENGINE (Warm Indian Preschool Teacher Speech Synthesis)
+  // Gentle, patient, caring Indian English female teacher voice ('en-IN')
+  // =========================================================================
+  class TeacherVoiceEngine {
+    constructor() {
+      this.selectedVoice = null;
+      this.isVoiceReady = false;
+      this.initVoiceList();
+    }
+
+    initVoiceList() {
+      if (!('speechSynthesis' in window)) return;
+
+      const load = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          this.selectBestIndianVoice(voices);
+          this.isVoiceReady = true;
+        }
+      };
+
+      load();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = load;
+      }
+    }
+
+    selectBestIndianVoice(voices) {
+      const indianFemaleKeywords = ['neerja', 'heera', 'swara', 'veena', 'lekha', 'isha', 'ananya', 'priya'];
+
+      // Priority 1: Indian English Female voice (e.g. Neerja Online Natural, Heera, Google en-IN, Veena)
+      let best = voices.find(v => {
+        const lang = (v.lang || '').toLowerCase();
+        const name = (v.name || '').toLowerCase();
+        const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+        const isFemale = indianFemaleKeywords.some(k => name.includes(k)) || name.includes('female');
+        return isIndian && isFemale;
+      });
+
+      // Priority 2: Any en-IN voice
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          return lang.startsWith('en-in') || lang === 'en_in';
+        });
+      }
+
+      // Priority 3: Hindi bilingual voice speaking English (hi-IN)
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          return lang.startsWith('hi-in') || lang === 'hi_in';
+        });
+      }
+
+      // Priority 4: Warm, gentle female English fallback (e.g. Samantha, Victoria, Hazel, Susan, Zira)
+      if (!best) {
+        const gentleFemale = ['samantha', 'victoria', 'hazel', 'susan', 'zira', 'karen', 'jenny', 'natural'];
+        best = voices.find(v => {
+          const name = (v.name || '').toLowerCase();
+          const lang = (v.lang || '').toLowerCase();
+          return lang.startsWith('en') && gentleFemale.some(k => name.includes(k));
+        });
+      }
+
+      // Final fallback
+      if (!best) {
+        best = voices.find(v => (v.lang || '').toLowerCase().startsWith('en')) || voices[0];
+      }
+
+      this.selectedVoice = best;
+    }
+
+    getWord(n) {
+      const words = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+      return words[n] || n.toString();
+    }
+
+    speak(text, onEnd) {
+      if (!state.voiceEnabled || !('speechSynthesis' in window)) {
+        if (onEnd) onEnd();
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel(); // Stop any pending utterance to prevent overlapping speech
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        if (this.selectedVoice) {
+          utterance.voice = this.selectedVoice;
+        }
+
+        const isIndian = this.selectedVoice && (
+          (this.selectedVoice.lang || '').toLowerCase().includes('in') ||
+          (this.selectedVoice.name || '').toLowerCase().includes('india')
+        );
+
+        utterance.lang = isIndian ? 'en-IN' : (this.selectedVoice ? this.selectedVoice.lang : 'en-US');
+        utterance.rate = 0.83; // Slightly slow, patient, caring preschool pace
+        utterance.pitch = 1.08; // Warm, friendly, gentle teacher pitch
+        utterance.volume = 1.0;
+
+        if (onEnd) {
+          utterance.onend = () => { onEnd(); };
+          utterance.onerror = () => { onEnd(); };
+        }
+
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('Teacher voice synthesis error:', e);
+        if (onEnd) onEnd();
+      }
+    }
+
+    // Welcome greeting
+    welcome(onEnd) {
+      this.speak("Hello, little gardener! Look at how the flowers combine, and let's find the total!", onEnd);
+    }
+
+    // Read question when tapping speaker icon
+    readQuestion(q, onEnd) {
+      if (!q) return;
+      const w1 = this.getWord(q.num1);
+      const w2 = this.getWord(q.num2);
+      const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
+      const text = `${cap1} plus ${w2}.`;
+      this.speak(text, onEnd);
+    }
+
+    // Single flower tap counting
+    countFlower(n) {
+      const word = this.getWord(n);
+      const cap = word.charAt(0).toUpperCase() + word.slice(1);
+      this.speak(cap + "!");
+    }
+
+    // Guide equation when kid counts flowers or hint finishes
+    guideEquation(num1, num2, answer) {
+      const w1 = this.getWord(num1);
+      const w2 = this.getWord(num2);
+      const wAns = this.getWord(answer);
+      const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
+      const noun = answer === 1 ? 'flower' : 'flowers';
+      const text = `${cap1} flowers plus ${w2} flowers make ${wAns} ${noun} in total.`;
+      this.speak(text);
+    }
+
+    // Correct answer celebration
+    celebrateCorrect(num1, num2, answer) {
+      if (answer === undefined && state.currentQuestion) {
+        answer = num1;
+        num1 = state.currentQuestion.num1;
+        num2 = state.currentQuestion.num2;
+      }
+      const w1 = this.getWord(num1);
+      const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
+      const w2 = this.getWord(num2);
+      const wAns = this.getWord(answer);
+      const text = `Excellent! ${cap1} plus ${w2} is ${wAns}. Good job!`;
+      this.speak(text);
+    }
+
+    // Encouraging retry (Zero shame)
+    encourageTryAgain() {
+      this.speak("That's okay, little one! Look at the combined flowers, and let's count together.");
+    }
+
+    // Level & Quest milestone completions
+    completion(level = 1) {
+      if (level === 1) {
+        this.speak("Wonderful! You can now add numbers to make four. Ready to learn to make six?");
+      } else if (level === 2) {
+        this.speak("Wonderful! You can now add numbers to make six. Ready to learn to make nine?");
+      } else {
+        this.speak("Wonderful! You can now add numbers to make nine. You're an addition star!");
+      }
+    }
+  }
+
+  const teacherVoice = new TeacherVoiceEngine();
+
+  // =========================================================================
+  // SVG FLOWER COMPONENT BUILDER
+  // Exactly matching Activity I: scalloped petals, sunny yellow center,
+  // and number inside the yellow center!
+  // =========================================================================
+  function createFlowerSVG({ 
+    number = null, 
+    size = 72, 
+    petalColor = '#ab47bc', 
+    centerColor = '#ffd54f', 
+    centerBorder = '#f59e0b', 
+    id = '',
+    hideNumber = false
+  }) {
+    const numPetals = 10;
+    const orbitR = 25.0;
+    const petalR = 15.0;
+    const cx = 50.0;
+    const cy = 50.0;
+
+    let petalsHTML = '';
+    for (let i = 0; i < numPetals; i++) {
+      const angle = i * (2 * Math.PI / numPetals);
+      const px = (cx + orbitR * Math.cos(angle)).toFixed(1);
+      const py = (cy + orbitR * Math.sin(angle)).toFixed(1);
+      petalsHTML += `<circle cx="${px}" cy="${py}" r="${petalR}" class="flower-petal-lobe" fill="${petalColor}" />\n`;
+    }
+
+    const digitClass = hideNumber ? 'flower-digit-text hidden-digit' : 'flower-digit-text revealed';
+
+    const numberHTML = number !== null ? `
+      <text x="50" y="51" 
+            text-anchor="middle" 
+            dominant-baseline="central" 
+            class="${digitClass}" 
+            fill="#261c14">${number}</text>
+    ` : '';
+
+    return `
+      <svg class="flower-svg" viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="Flower with number ${number}">
+        <g class="flower-graphic" id="${id}">
+          <g class="petals-group">
+            ${petalsHTML}
+            <circle cx="50" cy="50" r="26" class="flower-petal-lobe" fill="${petalColor}" />
+          </g>
+          <circle cx="50" cy="50" r="19" class="flower-center-circle" fill="${centerColor}" stroke="${centerBorder}" stroke-width="1.5" />
+          ${numberHTML}
+        </g>
+      </svg>
+    `;
+  }
+
+  // =========================================================================
+  // SPACED REPETITION QUESTION SCHEDULER
+  // Introduces addition pairs in dynamic triplets, repeating each fact after
+  // two different intervening questions to reinforce durable retention.
+  // =========================================================================
+  class QuestionScheduler {
+    constructor() {
+      this.currentLevel = 1;
+      this.queue = [];
+      this.usedTripletIndices = [];
+      this.initQueue(1);
+    }
+
+    initQueue(level) {
+      this.currentLevel = level;
+      this.queue = [];
+      this.usedTripletIndices = [];
+      this.fillQueue(level);
+    }
+
+    onLevelChange(newLevel) {
+      this.initQueue(newLevel);
+    }
+
+    getLevelTriplets(level) {
+      if (level === 1) {
+        // Level 1: Totals up to 4
+        return [
+          [[1, 1], [2, 2], [1, 2]],
+          [[1, 3], [2, 1], [3, 1]]
+        ];
+      } else if (level === 2) {
+        // Level 2: Totals up to 6
+        return [
+          [[2, 3], [3, 3], [1, 4]],
+          [[3, 2], [2, 4], [4, 1]],
+          [[4, 2], [1, 5], [5, 1]]
+        ];
+      } else {
+        // Level 3: Totals up to 9
+        return [
+          [[3, 4], [4, 4], [2, 5]],
+          [[4, 5], [4, 3], [3, 5]],
+          [[5, 2], [5, 3], [5, 4]],
+          [[2, 6], [3, 6], [2, 7]]
+        ];
+      }
+    }
+
+    fillQueue(level) {
+      const allTriplets = this.getLevelTriplets(level);
+
+      let availableIndices = allTriplets.map((_, i) => i).filter(i => !this.usedTripletIndices.includes(i));
+      if (availableIndices.length === 0) {
+        this.usedTripletIndices = [];
+        availableIndices = allTriplets.map((_, i) => i);
+      }
+
+      const chosenIndex = availableIndices[0];
+      this.usedTripletIndices.push(chosenIndex);
+      const triplet = allTriplets[chosenIndex];
+
+      const A = triplet[0];
+      const B = triplet[1];
+      const C = triplet[2];
+
+      // Schedule: A, B, C, then repeat A, repeat B, repeat C
+      this.queue.push(
+        { pair: [A[0], A[1]], isRepeat: false },
+        { pair: [B[0], B[1]], isRepeat: false },
+        { pair: [C[0], C[1]], isRepeat: false },
+        { pair: [A[0], A[1]], isRepeat: true },
+        { pair: [B[0], B[1]], isRepeat: true },
+        { pair: [C[0], C[1]], isRepeat: true }
+      );
+    }
+
+    getNextPair(level) {
+      if (this.currentLevel !== level) {
+        this.initQueue(level);
+      }
+
+      if (this.queue.length === 0) {
+        this.fillQueue(level);
+      }
+
+      const item = this.queue.shift();
+      return item.pair;
+    }
+  }
+
+  const questionScheduler = new QuestionScheduler();
+
+  function generateQuestion(level = state.level) {
+    const [num1, num2] = questionScheduler.getNextPair(level);
+    const answer = num1 + num2;
+
+    // Generate 2 sensible preschool distractors
+    const distractors = new Set();
+    const candidatePool = [];
+
+    if (answer - 1 > 0) candidatePool.push(answer - 1);
+    if (answer + 1 <= 9) candidatePool.push(answer + 1);
+    if (num1 > 0 && num1 !== answer) candidatePool.push(num1);
+    if (num2 > 0 && num2 !== answer) candidatePool.push(num2);
+    if (answer - 2 > 0) candidatePool.push(answer - 2);
+    if (answer + 2 <= 9) candidatePool.push(answer + 2);
+
+    candidatePool.sort(() => Math.random() - 0.5);
+
+    for (const val of candidatePool) {
+      if (val !== answer && val > 0 && val <= 9) {
+        distractors.add(val);
+        if (distractors.size === 2) break;
+      }
+    }
+
+    let fallback = 1;
+    while (distractors.size < 2) {
+      if (fallback !== answer && fallback <= 9) {
+        distractors.add(fallback);
+      }
+      fallback++;
+    }
+
+    const options = [answer, ...Array.from(distractors)];
+    options.sort(() => Math.random() - 0.5);
+
+    return {
+      num1,
+      num2,
+      answer,
+      options
+    };
+  }
+
+  // =========================================================================
+  // CONFETTI CELEBRATION ENGINE
+  // =========================================================================
+  class ConfettiEffect {
+    constructor(canvas) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.particles = [];
+      this.animationId = null;
+      this.resize();
+      window.addEventListener('resize', () => this.resize());
+    }
+
+    resize() {
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+    }
+
+    burst(x = window.innerWidth / 2, y = window.innerHeight / 2) {
+      const colors = ['#f97316', '#ffd54f', '#ab47bc', '#7cb342', '#38bdf8', '#fb7185'];
+      for (let i = 0; i < 48; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 4 + Math.random() * 8;
+        this.particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 3,
+          size: 6 + Math.random() * 8,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotationSpeed: (Math.random() - 0.5) * 12,
+          opacity: 1,
+          decay: 0.015 + Math.random() * 0.015
+        });
+      }
+
+      if (!this.animationId) {
+        this.animate();
+      }
+    }
+
+    animate() {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.22;
+        p.rotation += p.rotationSpeed;
+        p.opacity -= p.decay;
+
+        if (p.opacity <= 0) {
+          this.particles.splice(i, 1);
+          continue;
+        }
+
+        this.ctx.save();
+        this.ctx.translate(p.x, p.y);
+        this.ctx.rotate((p.rotation * Math.PI) / 180);
+        this.ctx.fillStyle = p.color;
+        this.ctx.globalAlpha = p.opacity;
+        this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+        this.ctx.restore();
+      }
+
+      if (this.particles.length > 0) {
+        this.animationId = requestAnimationFrame(() => this.animate());
+      } else {
+        this.animationId = null;
+      }
+    }
+  }
+
+  let confetti;
+
+  // =========================================================================
+  // RENDER QUESTION & VISUAL ADDITION EQUATION
+  // [Group 1 of flowers] + [Group 2 of flowers] = [Combined group of flowers]
+  // =========================================================================
+  function renderQuestion() {
+    state.isAnswered = false;
+    state.selectedAnswer = null;
+    state.isCountingHintActive = false;
+
+    const q = state.currentQuestion;
+    const currentPalette = FLOWER_PALETTES[state.paletteIndex];
+
+    // Dynamically update CSS custom properties for ambient theme accents
+    document.documentElement.style.setProperty('--flower-purple-petal', currentPalette.petal);
+    document.documentElement.style.setProperty('--flower-purple-petal-dark', currentPalette.petalDark);
+    document.documentElement.style.setProperty('--flower-purple-petal-light', currentPalette.petalLight);
+
+    // 1. Math Question Banner: "num1 + num2 = ?"
+    const qNum1 = document.getElementById('q-num1');
+    const qNum2 = document.getElementById('q-num2');
+    const qTarget = document.getElementById('q-target');
+
+    if (qNum1) qNum1.textContent = q.num1;
+    if (qNum2) qNum2.textContent = q.num2;
+    if (qTarget) {
+      qTarget.textContent = '?';
+      qTarget.classList.remove('solved');
+    }
+
+    // Determine flower size class based on answer total to keep layout neat
+    let flowerSizeClass = '';
+    let flowerPixelSize = 72;
+    if (q.answer <= 4) {
+      flowerSizeClass = 'size-lg';
+      flowerPixelSize = 80;
+    } else if (q.answer >= 7) {
+      flowerSizeClass = 'size-sm';
+      flowerPixelSize = 58;
+    }
+
+    // 2. Render Group 1 Box (q.num1 flowers)
+    const group1Box = document.getElementById('flower-group-1');
+    if (group1Box) {
+      group1Box.innerHTML = '';
+      for (let i = 1; i <= q.num1; i++) {
+        const flowerDiv = document.createElement('div');
+        flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
+        flowerDiv.dataset.group = '1';
+        flowerDiv.dataset.countIndex = i;
+        flowerDiv.dataset.counted = 'false';
+        flowerDiv.innerHTML = createFlowerSVG({
+          number: i,
+          size: flowerPixelSize,
+          petalColor: currentPalette.petal,
+          centerColor: '#ffd54f',
+          hideNumber: true // Hidden initially, reveals on tap!
+        });
+
+        flowerDiv.addEventListener('click', () => {
+          handleFlowerTap(flowerDiv, i);
+        });
+
+        group1Box.appendChild(flowerDiv);
+      }
+    }
+
+    // 3. Render Group 2 Box (q.num2 flowers)
+    const group2Box = document.getElementById('flower-group-2');
+    if (group2Box) {
+      group2Box.innerHTML = '';
+      for (let i = 1; i <= q.num2; i++) {
+        const countNumber = i;
+        const flowerDiv = document.createElement('div');
+        flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
+        flowerDiv.dataset.group = '2';
+        flowerDiv.dataset.countIndex = countNumber;
+        flowerDiv.dataset.counted = 'false';
+        flowerDiv.innerHTML = createFlowerSVG({
+          number: countNumber,
+          size: flowerPixelSize,
+          petalColor: currentPalette.petal,
+          centerColor: '#ffd54f',
+          hideNumber: true
+        });
+
+        flowerDiv.addEventListener('click', () => {
+          handleFlowerTap(flowerDiv, countNumber);
+        });
+
+        group2Box.appendChild(flowerDiv);
+      }
+    }
+
+    // 4. Render Combined Result Group Box:
+    // ALWAYS CONTAINS EXACTLY THE SUM OF THE FIRST TWO GROUPS!
+    // e.g. 2 flowers + 2 flowers = 4 flowers
+    const groupResultBox = document.getElementById('flower-group-result');
+    if (groupResultBox) {
+      groupResultBox.innerHTML = '';
+      for (let i = 1; i <= q.answer; i++) {
+        const flowerDiv = document.createElement('div');
+        flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
+        flowerDiv.dataset.group = 'result';
+        flowerDiv.dataset.countIndex = i;
+        flowerDiv.dataset.counted = 'false';
+        flowerDiv.innerHTML = createFlowerSVG({
+          number: i,
+          size: flowerPixelSize,
+          petalColor: currentPalette.petal,
+          centerColor: '#ffd54f',
+          hideNumber: true // Child can tap each flower in the combined set to count 1..answer!
+        });
+
+        flowerDiv.addEventListener('click', () => {
+          handleFlowerTap(flowerDiv, i);
+        });
+
+        groupResultBox.appendChild(flowerDiv);
+      }
+    }
+
+    // 5. Render Three Flower-Shaped Answer Buttons
+    // Answer numbers appear directly inside yellow centres!
+    const answerContainer = document.getElementById('flower-answer-buttons');
+    if (answerContainer) {
+      answerContainer.innerHTML = '';
+
+      q.options.forEach((val) => {
+        const btn = document.createElement('button');
+        btn.className = 'flower-btn';
+        btn.dataset.value = val;
+        btn.setAttribute('aria-label', `Flower option ${val}`);
+
+        btn.innerHTML = createFlowerSVG({
+          number: val,
+          size: 105,
+          petalColor: currentPalette.petal,
+          centerColor: '#ffd54f',
+          hideNumber: false // Visible numbers inside sunny yellow centres
+        });
+
+        btn.addEventListener('click', (e) => {
+          handleAnswerSelect(val, btn, e);
+        });
+
+        answerContainer.appendChild(btn);
+      });
+    }
+
+    // 6. Reset Feedback Ribbon
+    const feedbackRibbon = document.getElementById('feedback-ribbon');
+    if (feedbackRibbon) {
+      feedbackRibbon.innerHTML = '';
+    }
+
+    // 7. Update Level Indicator Text
+    updateLevelBadge();
+  }
+
+  // --- Flower Tap Handler (Tactile Counting on Equation Blossoms) ---
+  function handleFlowerTap(flowerEl, number) {
+    audio.playPop(number);
+    teacherVoice.countFlower(number);
+
+    // Reveal number in flower's yellow center on tap!
+    const textElem = flowerEl.querySelector('.flower-digit-text');
+    if (textElem && textElem.classList.contains('hidden-digit')) {
+      textElem.classList.remove('hidden-digit');
+      textElem.classList.add('revealed');
+    }
+
+    flowerEl.dataset.counted = 'true';
+    flowerEl.classList.remove('uncounted');
+    flowerEl.classList.add('counted');
+
+    flowerEl.classList.remove('tapped');
+    void flowerEl.offsetWidth; // Trigger reflow for bounce
+    flowerEl.classList.add('tapped');
+
+    // If all flowers in the combined group have been tapped, speak gentle guidance
+    checkCombinedFlowersCounted();
+  }
+
+  function checkCombinedFlowersCounted() {
+    const uncountedResult = document.querySelectorAll('#flower-group-result .flower-token[data-counted="false"]');
+    if (uncountedResult.length === 0 && !state.isAnswered) {
+      const q = state.currentQuestion;
+      setTimeout(() => {
+        teacherVoice.guideEquation(q.num1, q.num2, q.answer);
+      }, 450);
+    }
+  }
+
+  // Reveal all question flowers upon hint or correct answer
+  function revealAllQuestionFlowers() {
+    const allFlowers = document.querySelectorAll('.flower-equation-wrapper .flower-token');
+    allFlowers.forEach((flowerEl, idx) => {
+      const textElem = flowerEl.querySelector('.flower-digit-text');
+      if (textElem && textElem.classList.contains('hidden-digit')) {
+        setTimeout(() => {
+          textElem.classList.remove('hidden-digit');
+          textElem.classList.add('revealed');
+          flowerEl.dataset.counted = 'true';
+          flowerEl.classList.remove('uncounted');
+          flowerEl.classList.add('counted');
+        }, idx * 60);
+      }
+    });
+  }
+
+  // =========================================================================
+  // ANSWER SELECTION & VERIFICATION
+  // =========================================================================
+  function handleAnswerSelect(selectedVal, btnElement, event) {
+    if (state.isAnswered) return;
+
+    audio.init();
+
+    if (selectedVal === state.currentQuestion.answer) {
+      // --- CORRECT ANSWER ---
+      state.isAnswered = true;
+      state.selectedAnswer = selectedVal;
+      state.starsEarned++;
+      state.currentStreak++;
+
+      // Update question equation display: ? -> answer with solved highlight
+      const qTarget = document.getElementById('q-target');
+      if (qTarget) {
+        qTarget.textContent = selectedVal;
+        qTarget.classList.add('solved');
+      }
+
+      // Button celebration animation
+      btnElement.classList.add('correct');
+
+      // Reveal all flowers across the equation so child sees the full solution
+      revealAllQuestionFlowers();
+
+      // Trigger Confetti originating from the clicked flower
+      if (confetti) {
+        const rect = btnElement.getBoundingClientRect();
+        confetti.burst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      }
+
+      // Audio & Speech
+      audio.playSuccessFanfare();
+      teacherVoice.celebrateCorrect(state.currentQuestion.num1, state.currentQuestion.num2, selectedVal);
+
+      // Feedback banner
+      const feedbackRibbon = document.getElementById('feedback-ribbon');
+      if (feedbackRibbon) {
+        const isRound10 = state.starsEarned >= state.maxStars;
+        let actionBtnText = 'Play Next Round';
+        if (isRound10) {
+          actionBtnText = state.level < 3 ? 'Start Next Level' : 'Play Again';
+        }
+
+        feedbackRibbon.innerHTML = `
+          <div class="feedback-msg success">
+            ðŸŽ‰ Excellent! &nbsp;${state.currentQuestion.num1} + ${state.currentQuestion.num2} = ${selectedVal}&nbsp; Good job!
+          </div>
+          <button id="next-btn" class="next-question-btn">
+            ${actionBtnText}
+          </button>
+        `;
+
+        const nextBtn = document.getElementById('next-btn');
+        if (nextBtn) {
+          nextBtn.focus();
+          nextBtn.addEventListener('click', () => {
+            if (isRound10) {
+              showLevelCompleteModal();
+            } else {
+              onNextQuestion();
+            }
+          });
+        }
+      }
+
+      // Star meter update
+      updateProgressStars();
+
+      // Check for round 10 completion
+      if (state.starsEarned >= state.maxStars) {
+        setTimeout(() => {
+          showLevelCompleteModal();
+        }, 1200);
+      }
+
+    } else {
+      // --- INCORRECT ANSWER (Encouraging, Non-penalizing) ---
+      btnElement.classList.remove('incorrect');
+      void btnElement.offsetWidth;
+      btnElement.classList.add('incorrect');
+
+      audio.playGentleTryAgain();
+      teacherVoice.encourageTryAgain();
+
+      const feedbackRibbon = document.getElementById('feedback-ribbon');
+      if (feedbackRibbon) {
+        feedbackRibbon.innerHTML = `
+          <div class="feedback-msg try-again">
+            ðŸŒ± That's okay, little one! Look at the combined flowers and try again.
+          </div>
+        `;
+      }
+
+      // Gently pulse the hint button to guide the child
+      const hintBtn = document.getElementById('btn-count-hint');
+      if (hintBtn) {
+        hintBtn.classList.add('hint-pulse');
+        setTimeout(() => hintBtn.classList.remove('hint-pulse'), 3000);
+      }
+    }
+  }
+
+  // =========================================================================
+  // VISUAL EQUATION COUNTING HINT ("Count with Me")
+  // Walks sequentially through Group 1, Group 2, and the Combined Result
+  // =========================================================================
+  function triggerCountingHint() {
+    if (state.isCountingHintActive || state.isAnswered) return;
+    state.isCountingHintActive = true;
+
+    audio.init();
+
+    const g1Flowers = Array.from(document.querySelectorAll('#flower-group-1 .flower-token'));
+    const g2Flowers = Array.from(document.querySelectorAll('#flower-group-2 .flower-token'));
+    const resFlowers = Array.from(document.querySelectorAll('#flower-group-result .flower-token'));
+
+    // Sequence of elements to highlight:
+    // Group 1 flowers -> Plus sign -> Group 2 flowers -> Equals sign -> Combined flowers
+    const sequence = [];
+    g1Flowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, label: 'g1' }));
+    
+    const plusElem = document.querySelector('.math-plus-symbol');
+    if (plusElem) sequence.push({ elem: plusElem, type: 'operator', text: 'plus' });
+
+    g2Flowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, label: 'g2' }));
+
+    const equalsElem = document.querySelector('.math-equals-symbol');
+    if (equalsElem) sequence.push({ elem: equalsElem, type: 'operator', text: 'equals' });
+
+    resFlowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, label: 'res' }));
+
+    let stepIndex = 0;
+    const interval = setInterval(() => {
+      // Clear previous highlights
+      document.querySelectorAll('.flower-token.highlighted, .math-operator-symbol.highlighted').forEach(el => {
+        el.classList.remove('highlighted');
+      });
+
+      if (stepIndex < sequence.length) {
+        const item = sequence[stepIndex];
+        item.elem.classList.add('highlighted');
+
+        if (item.type === 'flower') {
+          // Reveal digit
+          const textElem = item.elem.querySelector('.flower-digit-text');
+          if (textElem && textElem.classList.contains('hidden-digit')) {
+            textElem.classList.remove('hidden-digit');
+            textElem.classList.add('revealed');
+          }
+          item.elem.dataset.counted = 'true';
+          item.elem.classList.remove('uncounted');
+          item.elem.classList.add('counted');
+
+          audio.playPop(item.count);
+          teacherVoice.countFlower(item.count);
+        }
+
+        stepIndex++;
+      } else {
+        clearInterval(interval);
+        document.querySelectorAll('.flower-token.highlighted, .math-operator-symbol.highlighted').forEach(el => {
+          el.classList.remove('highlighted');
+        });
+        state.isCountingHintActive = false;
+
+        const total = state.currentQuestion.answer;
+        teacherVoice.guideEquation(state.currentQuestion.num1, state.currentQuestion.num2, total);
+
+        // Highlight matching answer button gently
+        const answerBtns = document.querySelectorAll('.flower-answer-buttons .flower-btn');
+        answerBtns.forEach(btn => {
+          if (parseInt(btn.dataset.value, 10) === total) {
+            btn.style.filter = 'drop-shadow(0 0 20px rgba(245, 158, 11, 0.95))';
+            setTimeout(() => {
+              btn.style.filter = '';
+            }, 3500);
+          }
+        });
+      }
+    }, 720);
+  }
+
+  // --- Next Question Action ---
+  function onNextQuestion() {
+    state.paletteIndex = (state.paletteIndex + 1) % FLOWER_PALETTES.length;
+    state.currentQuestion = generateQuestion();
+    renderQuestion();
+  }
+
+  // --- Progress & Stars Update ---
+  function updateProgressStars() {
+    const starSlots = document.querySelectorAll('.stars-meter-row .star-slot');
+    starSlots.forEach((slot, idx) => {
+      if (idx < state.starsEarned) {
+        if (!slot.classList.contains('earned')) {
+          slot.classList.add('earned');
+          audio.playStarEarned();
+        }
+      } else {
+        slot.classList.remove('earned');
+      }
+    });
+
+    const streakEl = document.getElementById('stat-streak-val');
+    if (streakEl) {
+      streakEl.textContent = state.currentStreak;
+    }
+  }
+
+  // --- Update Level Badge Indicator ---
+  function updateLevelBadge() {
+    const badge = document.getElementById('level-badge-text');
+    if (badge) {
+      if (state.level === 1) {
+        badge.textContent = 'Level 1: Totals up to 4';
+      } else if (state.level === 2) {
+        badge.textContent = 'Level 2: Totals up to 6';
+      } else {
+        badge.textContent = 'Level 3: Totals up to 9';
+      }
+    }
+
+    // Update level switcher buttons
+    const levelBtns = document.querySelectorAll('.level-toggle-btn');
+    levelBtns.forEach(btn => {
+      const lvl = parseInt(btn.dataset.level, 10);
+      if (lvl === state.level) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // =========================================================================
+  // CELEBRATION / QUEST COMPLETE MODAL
+  // =========================================================================
+  function showLevelCompleteModal() {
+    audio.playSuccessFanfare();
+    if (confetti) {
+      confetti.burst(window.innerWidth / 2, window.innerHeight / 3);
+      setTimeout(() => confetti.burst(window.innerWidth / 3, window.innerHeight / 2), 300);
+      setTimeout(() => confetti.burst((window.innerWidth * 2) / 3, window.innerHeight / 2), 600);
+    }
+
+    teacherVoice.completion(state.level);
+
+    const titleElem = document.getElementById('modal-complete-title');
+    const starsText = document.getElementById('modal-complete-stars-text');
+    const descText = document.getElementById('modal-complete-desc-text');
+    const playBtn = document.getElementById('btn-play-again');
+
+    if (starsText && descText && playBtn) {
+      starsText.textContent = `You earned 10 â­ in Level ${state.level}!`;
+
+      if (state.level === 1) {
+        if (titleElem) titleElem.textContent = 'Level 1 Completed!';
+        descText.textContent = 'Wonderful! ðŸŒ¸ You can now add numbers to make 4. Ready to learn to make 6?';
+        playBtn.textContent = 'Start Next Level';
+      } else if (state.level === 2) {
+        if (titleElem) titleElem.textContent = 'Level 2 Completed!';
+        descText.textContent = 'Wonderful! ðŸŒ¸ You can now add numbers to make 6. Ready to learn to make 9?';
+        playBtn.textContent = 'Start Next Level';
+      } else {
+        if (titleElem) titleElem.textContent = 'Quest Completed!';
+        descText.textContent = 'Wonderful! ðŸŒ¸ You can now add numbers to make 9. Youâ€™re an addition star!';
+        playBtn.textContent = 'Play Again';
+      }
+    }
+
+    const modal = document.getElementById('quest-complete-modal');
+    if (modal) {
+      modal.classList.add('active');
+    }
+  }
+
+  function hideModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+
+  // =========================================================================
+  // INITIALIZE APP
+  // =========================================================================
+  function init() {
+    // Canvas Confetti
+    const canvas = document.getElementById('confetti-canvas');
+    if (canvas) {
+      confetti = new ConfettiEffect(canvas);
+    }
+
+    // Audio Speaker button in math banner
+    const audioSpeakBtn = document.getElementById('audio-speak-btn');
+    if (audioSpeakBtn) {
+      audioSpeakBtn.addEventListener('click', () => {
+        audio.init();
+        audioSpeakBtn.classList.add('speaking');
+        teacherVoice.readQuestion(state.currentQuestion, () => {
+          audioSpeakBtn.classList.remove('speaking');
+        });
+      });
+    }
+
+    // Visual Counting Hint Button
+    const countHintBtn = document.getElementById('btn-count-hint');
+    if (countHintBtn) {
+      countHintBtn.addEventListener('click', triggerCountingHint);
+    }
+
+    // Teacher Voice & Sound Toggles
+    function updateVoiceTogglesUI() {
+      const soundToggleBtn = document.getElementById('btn-sound-toggle');
+      const teacherVoiceBtn = document.getElementById('teacher-voice-toggle-btn');
+      const teacherVoiceStatus = document.getElementById('teacher-voice-status');
+
+      if (soundToggleBtn) {
+        soundToggleBtn.textContent = state.voiceEnabled ? 'ðŸ”Š' : 'ðŸ”‡';
+        soundToggleBtn.title = state.voiceEnabled ? 'Mute Teacher Voice' : 'Unmute Teacher Voice';
+      }
+
+      if (teacherVoiceBtn && teacherVoiceStatus) {
+        teacherVoiceStatus.textContent = state.voiceEnabled ? 'ON' : 'OFF';
+        if (state.voiceEnabled) {
+          teacherVoiceBtn.classList.remove('muted');
+          teacherVoiceBtn.title = 'Teacher Voice: ON (Click to Mute)';
+        } else {
+          teacherVoiceBtn.classList.add('muted');
+          teacherVoiceBtn.title = 'Teacher Voice: OFF (Click to Unmute)';
+        }
+      }
+    }
+
+    function toggleTeacherVoice() {
+      state.voiceEnabled = !state.voiceEnabled;
+      state.soundEnabled = state.voiceEnabled;
+      updateVoiceTogglesUI();
+
+      if (!state.voiceEnabled) {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+      }
+    }
+
+    const soundToggleBtn = document.getElementById('btn-sound-toggle');
+    if (soundToggleBtn) {
+      soundToggleBtn.addEventListener('click', toggleTeacherVoice);
+    }
+
+    const teacherVoiceBtn = document.getElementById('teacher-voice-toggle-btn');
+    if (teacherVoiceBtn) {
+      teacherVoiceBtn.addEventListener('click', toggleTeacherVoice);
+    }
+
+    // Guide Modal Triggers
+    const guideBtn = document.getElementById('guide-pill-btn');
+    const guideModal = document.getElementById('guide-modal');
+    if (guideBtn && guideModal) {
+      guideBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        guideModal.classList.add('active');
+      });
+    }
+
+    // Level Switcher Buttons
+    const levelBtns = document.querySelectorAll('.level-toggle-btn');
+    levelBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const selectedLvl = parseInt(btn.dataset.level, 10);
+        if (state.level !== selectedLvl) {
+          state.level = selectedLvl;
+          state.starsEarned = 0;
+          state.currentStreak = 0;
+          updateProgressStars();
+          questionScheduler.onLevelChange(selectedLvl);
+          updateLevelBadge();
+          onNextQuestion();
+        }
+      });
+    });
+
+    // Modal Close Buttons
+    const closeButtons = document.querySelectorAll('.modal-close-trigger');
+    closeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modal = btn.closest('.modal-backdrop');
+        if (modal) modal.classList.remove('active');
+      });
+    });
+
+    // Play Again button inside completion modal
+    const playAgainBtn = document.getElementById('btn-play-again');
+    if (playAgainBtn) {
+      playAgainBtn.addEventListener('click', () => {
+        hideModal('quest-complete-modal');
+        state.starsEarned = 0;
+        state.currentStreak = 0;
+        updateProgressStars();
+        if (state.level < 3) {
+          state.level++;
+        } else {
+          state.level = 1;
+        }
+        questionScheduler.onLevelChange(state.level);
+        updateLevelBadge();
+        onNextQuestion();
+      });
+    }
+
+    // Autoplay compliance & Voice Engine warm up on first gesture
+    function handleFirstUserGesture() {
+      if (!state.hasUserInteracted) {
+        state.hasUserInteracted = true;
+        audio.init();
+        teacherVoice.initVoiceList();
+      }
+    }
+
+    window.addEventListener('pointerdown', handleFirstUserGesture, { once: true });
+
+    // Generate First Question & Start
+    state.currentQuestion = generateQuestion();
+    renderQuestion();
+    updateVoiceTogglesUI();
+  }
+
+  // Start when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
