@@ -35,7 +35,13 @@
     isCountingHintActive: false,
     paletteIndex: 0,
     hasUserInteracted: false,
-    hasWelcomed: false
+    hasWelcomed: false,
+    boxCounters: {
+      'flower-group-1': 0,
+      'flower-group-2': 0,
+      'flower-group-result': 0
+    },
+    activeCountingBox: null
   };
 
   // =========================================================================
@@ -490,17 +496,20 @@
     }
 
     const digitClass = hideNumber ? 'flower-digit-text hidden-digit' : 'flower-digit-text revealed';
+    const displayVal = (number !== null && number !== undefined) ? number : '';
 
-    const numberHTML = number !== null ? `
+    const numberHTML = `
       <text x="50" y="51" 
             text-anchor="middle" 
             dominant-baseline="central" 
             class="${digitClass}" 
-            fill="#261c14">${number}</text>
-    ` : '';
+            fill="#261c14">${displayVal}</text>
+    `;
+
+    const flowerLabel = displayVal ? `Flower with number ${displayVal}` : 'Flower - tap to count';
 
     return `
-      <svg class="flower-svg" viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="Flower with number ${number}">
+      <svg class="flower-svg" viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="${flowerLabel}">
         <g class="flower-graphic" id="${id}">
           <g class="petals-group">
             ${petalsHTML}
@@ -735,6 +744,21 @@
     state.selectedAnswer = null;
     state.isCountingHintActive = false;
 
+    // Reset per-box counters and active counting sequence
+    state.boxCounters = {
+      'flower-group-1': 0,
+      'flower-group-2': 0,
+      'flower-group-result': 0
+    };
+    state.activeCountingBox = null;
+
+    ['flower-group-1', 'flower-group-2', 'flower-group-result'].forEach(id => {
+      const box = document.getElementById(id);
+      if (box) {
+        box.classList.remove('counting-active', 'box-completed', 'box-attention');
+      }
+    });
+
     const q = state.currentQuestion;
     const currentPalette = FLOWER_PALETTES[state.paletteIndex];
 
@@ -767,25 +791,26 @@
     }
 
     // 2. Render Group 1 Box (q.num1 flowers)
+    // Child can tap any flower as 1, counting in any order!
     const group1Box = document.getElementById('flower-group-1');
     if (group1Box) {
       group1Box.innerHTML = '';
       for (let i = 1; i <= q.num1; i++) {
         const flowerDiv = document.createElement('div');
         flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-        flowerDiv.dataset.group = '1';
-        flowerDiv.dataset.countIndex = i;
+        flowerDiv.dataset.box = 'flower-group-1';
         flowerDiv.dataset.counted = 'false';
+        flowerDiv.dataset.countOrder = '';
         flowerDiv.innerHTML = createFlowerSVG({
-          number: i,
+          number: '',
           size: flowerPixelSize,
           petalColor: currentPalette.petal,
           centerColor: '#ffd54f',
-          hideNumber: true // Hidden initially, reveals on tap!
+          hideNumber: true // Hidden initially, reveals dynamic count number on tap!
         });
 
         flowerDiv.addEventListener('click', () => {
-          handleFlowerTap(flowerDiv, i);
+          handleFlowerTap(flowerDiv, 'flower-group-1');
         });
 
         group1Box.appendChild(flowerDiv);
@@ -793,18 +818,18 @@
     }
 
     // 3. Render Group 2 Box (q.num2 flowers)
+    // Child can tap any flower as 1, counting independently!
     const group2Box = document.getElementById('flower-group-2');
     if (group2Box) {
       group2Box.innerHTML = '';
       for (let i = 1; i <= q.num2; i++) {
-        const countNumber = i;
         const flowerDiv = document.createElement('div');
         flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-        flowerDiv.dataset.group = '2';
-        flowerDiv.dataset.countIndex = countNumber;
+        flowerDiv.dataset.box = 'flower-group-2';
         flowerDiv.dataset.counted = 'false';
+        flowerDiv.dataset.countOrder = '';
         flowerDiv.innerHTML = createFlowerSVG({
-          number: countNumber,
+          number: '',
           size: flowerPixelSize,
           petalColor: currentPalette.petal,
           centerColor: '#ffd54f',
@@ -812,7 +837,7 @@
         });
 
         flowerDiv.addEventListener('click', () => {
-          handleFlowerTap(flowerDiv, countNumber);
+          handleFlowerTap(flowerDiv, 'flower-group-2');
         });
 
         group2Box.appendChild(flowerDiv);
@@ -822,25 +847,26 @@
     // 4. Render Combined Result Group Box:
     // ALWAYS CONTAINS EXACTLY THE SUM OF THE FIRST TWO GROUPS!
     // e.g. 2 flowers + 2 flowers = 4 flowers
+    // Child can tap any flower as 1, counting 1..answer in any order!
     const groupResultBox = document.getElementById('flower-group-result');
     if (groupResultBox) {
       groupResultBox.innerHTML = '';
       for (let i = 1; i <= q.answer; i++) {
         const flowerDiv = document.createElement('div');
         flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-        flowerDiv.dataset.group = 'result';
-        flowerDiv.dataset.countIndex = i;
+        flowerDiv.dataset.box = 'flower-group-result';
         flowerDiv.dataset.counted = 'false';
+        flowerDiv.dataset.countOrder = '';
         flowerDiv.innerHTML = createFlowerSVG({
-          number: i,
+          number: '',
           size: flowerPixelSize,
           petalColor: currentPalette.petal,
           centerColor: '#ffd54f',
-          hideNumber: true // Child can tap each flower in the combined set to count 1..answer!
+          hideNumber: true
         });
 
         flowerDiv.addEventListener('click', () => {
-          handleFlowerTap(flowerDiv, i);
+          handleFlowerTap(flowerDiv, 'flower-group-result');
         });
 
         groupResultBox.appendChild(flowerDiv);
@@ -885,28 +911,119 @@
     updateLevelBadge();
   }
 
-  // --- Flower Tap Handler (Tactile Counting on Equation Blossoms) ---
-  function handleFlowerTap(flowerEl, number) {
-    audio.playPop(number);
-    teacherVoice.countFlower(number);
+  // --- Flower Tap Handler (Tactile Order-Irrelevant Counting) ---
+  // The child can start with any flower in the group as number 1.
+  // Each subsequent flower receives the next count in selection order.
+  function handleFlowerTap(flowerEl, boxId) {
+    if (state.isAnswered) return;
 
-    // Reveal number in flower's yellow center on tap!
+    // Prevent counting a flower twice in the same sequence
+    if (flowerEl.dataset.counted === 'true') {
+      flowerEl.classList.remove('tapped');
+      void flowerEl.offsetWidth;
+      flowerEl.classList.add('tapped');
+      return;
+    }
+
+    // Keep counting restricted to the current box.
+    // The child must not switch to another box in the middle of a counting sequence.
+    if (state.activeCountingBox && state.activeCountingBox !== boxId) {
+      const activeBoxEl = document.getElementById(state.activeCountingBox);
+      if (activeBoxEl) {
+        activeBoxEl.classList.remove('box-attention');
+        void activeBoxEl.offsetWidth;
+        activeBoxEl.classList.add('box-attention');
+        setTimeout(() => {
+          activeBoxEl.classList.remove('box-attention');
+        }, 500);
+      }
+      return;
+    }
+
+    // Lock to this box during the sequence if not already locked
+    if (!state.activeCountingBox) {
+      state.activeCountingBox = boxId;
+      const boxEl = document.getElementById(boxId);
+      if (boxEl) {
+        boxEl.classList.add('counting-active');
+      }
+    }
+
+    // Assign the next number in order of child's selection: 1, 2, 3...
+    state.boxCounters[boxId] = (state.boxCounters[boxId] || 0) + 1;
+    const currentCount = state.boxCounters[boxId];
+
+    flowerEl.dataset.counted = 'true';
+    flowerEl.dataset.countOrder = String(currentCount);
+    flowerEl.classList.remove('uncounted');
+    flowerEl.classList.add('counted');
+
+    // Reveal the dynamic count number in the flower's yellow centre
     const textElem = flowerEl.querySelector('.flower-digit-text');
-    if (textElem && textElem.classList.contains('hidden-digit')) {
+    if (textElem) {
+      textElem.textContent = currentCount;
       textElem.classList.remove('hidden-digit');
       textElem.classList.add('revealed');
     }
 
-    flowerEl.dataset.counted = 'true';
-    flowerEl.classList.remove('uncounted');
-    flowerEl.classList.add('counted');
-
+    // Tactile blossom bounce
     flowerEl.classList.remove('tapped');
-    void flowerEl.offsetWidth; // Trigger reflow for bounce
+    void flowerEl.offsetWidth;
     flowerEl.classList.add('tapped');
 
-    // If all flowers in the combined group have been tapped, speak gentle guidance
-    checkCombinedFlowersCounted();
+    // Spoken number and cheerful pop sound
+    audio.playPop(currentCount);
+    teacherVoice.countFlower(currentCount);
+
+    // Check if all flowers in this box are now counted
+    const boxEl = document.getElementById(boxId);
+    if (boxEl) {
+      const totalFlowers = boxEl.querySelectorAll('.flower-token').length;
+      if (state.boxCounters[boxId] >= totalFlowers) {
+        boxEl.classList.remove('counting-active');
+        boxEl.classList.add('box-completed');
+        // Group counting sequence is complete! Child is free to move to another box
+        state.activeCountingBox = null;
+
+        // If all flowers in the combined result box are counted, speak gentle guidance
+        if (boxId === 'flower-group-result') {
+          checkCombinedFlowersCounted();
+        }
+      }
+    }
+  }
+
+  // --- Reset / Recount Handler ---
+  // Allows child to recount the same group starting with a different flower
+  function resetBoxCounting(boxId) {
+    if (state.isAnswered) return;
+
+    const boxEl = document.getElementById(boxId);
+    if (!boxEl) return;
+
+    state.boxCounters[boxId] = 0;
+    if (state.activeCountingBox === boxId) {
+      state.activeCountingBox = null;
+    }
+
+    boxEl.classList.remove('counting-active', 'box-completed', 'box-attention');
+
+    const flowers = boxEl.querySelectorAll('.flower-token');
+    flowers.forEach(flowerEl => {
+      flowerEl.dataset.counted = 'false';
+      flowerEl.dataset.countOrder = '';
+      flowerEl.classList.remove('counted', 'tapped', 'highlighted');
+      flowerEl.classList.add('uncounted');
+
+      const textElem = flowerEl.querySelector('.flower-digit-text');
+      if (textElem) {
+        textElem.textContent = '';
+        textElem.classList.remove('revealed');
+        textElem.classList.add('hidden-digit');
+      }
+    });
+
+    audio.playPop(1);
   }
 
   let combinedCountTimer = null;
@@ -927,19 +1044,60 @@
   }
 
   // Reveal all question flowers upon hint or correct answer
+  // Ensures any uncounted flowers are filled with remaining valid numbers 1..N
   function revealAllQuestionFlowers() {
-    const allFlowers = document.querySelectorAll('.flower-equation-wrapper .flower-token');
-    allFlowers.forEach((flowerEl, idx) => {
-      const textElem = flowerEl.querySelector('.flower-digit-text');
-      if (textElem && textElem.classList.contains('hidden-digit')) {
-        setTimeout(() => {
-          textElem.classList.remove('hidden-digit');
-          textElem.classList.add('revealed');
+    const boxes = [
+      { id: 'flower-group-1', total: state.currentQuestion.num1 },
+      { id: 'flower-group-2', total: state.currentQuestion.num2 },
+      { id: 'flower-group-result', total: state.currentQuestion.answer }
+    ];
+
+    let delayIndex = 0;
+    boxes.forEach(boxInfo => {
+      const boxEl = document.getElementById(boxInfo.id);
+      if (!boxEl) return;
+
+      const flowers = Array.from(boxEl.querySelectorAll('.flower-token'));
+      const usedNumbers = new Set();
+      flowers.forEach(f => {
+        if (f.dataset.counted === 'true' && f.dataset.countOrder) {
+          usedNumbers.add(parseInt(f.dataset.countOrder, 10));
+        }
+      });
+
+      const unusedNumbers = [];
+      for (let n = 1; n <= boxInfo.total; n++) {
+        if (!usedNumbers.has(n)) {
+          unusedNumbers.push(n);
+        }
+      }
+
+      let unusedIdx = 0;
+      flowers.forEach(flowerEl => {
+        if (flowerEl.dataset.counted !== 'true') {
+          const assignedNum = unusedNumbers[unusedIdx++] || (usedNumbers.size + 1);
           flowerEl.dataset.counted = 'true';
+          flowerEl.dataset.countOrder = String(assignedNum);
           flowerEl.classList.remove('uncounted');
           flowerEl.classList.add('counted');
-        }, idx * 60);
-      }
+
+          const textElem = flowerEl.querySelector('.flower-digit-text');
+          if (textElem) {
+            textElem.textContent = assignedNum;
+          }
+
+          setTimeout(() => {
+            if (textElem) {
+              textElem.classList.remove('hidden-digit');
+              textElem.classList.add('revealed');
+            }
+          }, delayIndex * 50);
+          delayIndex++;
+        }
+      });
+
+      boxEl.classList.remove('counting-active', 'box-attention');
+      boxEl.classList.add('box-completed');
     });
   }
 
@@ -1097,7 +1255,11 @@
         if (item.type === 'flower') {
           // Reveal digit
           const textElem = item.elem.querySelector('.flower-digit-text');
-          if (textElem && textElem.classList.contains('hidden-digit')) {
+          if (textElem) {
+            if (!item.elem.dataset.countOrder) {
+              textElem.textContent = item.count;
+              item.elem.dataset.countOrder = String(item.count);
+            }
             textElem.classList.remove('hidden-digit');
             textElem.classList.add('revealed');
           }
@@ -1262,6 +1424,19 @@
     if (countHintBtn) {
       countHintBtn.addEventListener('click', triggerCountingHint);
     }
+
+    // Box Recount Buttons (Order-Irrelevant Counting Restart)
+    ['group-1', 'group-2', 'group-result'].forEach(suffix => {
+      const btn = document.getElementById(`recount-btn-${suffix}`);
+      if (btn) {
+        const targetBoxId = btn.dataset.box || (suffix === 'group-result' ? 'flower-group-result' : `flower-${suffix}`);
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          resetBoxCounting(targetBoxId);
+        });
+      }
+    });
 
     // Teacher Voice & Sound Toggles
     function updateVoiceTogglesUI() {

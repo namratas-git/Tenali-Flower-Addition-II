@@ -547,6 +547,16 @@ body {
   min-width: 170px;
 }
 
+.group-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
 .group-header-tag {
   font-size: 12px;
   font-weight: 800;
@@ -557,12 +567,58 @@ body {
   padding: 3px 10px;
   border-radius: 9999px;
   border: 1px solid #c9e4c1;
+  white-space: nowrap;
 }
 
 .group-header-tag.result-tag {
   color: #854d0e;
   background: #fef3c7;
   border-color: #fde047;
+}
+
+/* Recount Pill Button for Order-Irrelevant Counting */
+.box-recount-btn {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  color: #3b6b3e;
+  background: #f1f8ed;
+  border: 1px solid #c8e0bf;
+  border-radius: 9999px;
+  padding: 2.5px 8.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  line-height: 1.35;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.box-recount-btn:hover {
+  background: #e2f2da;
+  border-color: #7cb342;
+  color: #275217;
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 2px 6px rgba(43, 122, 55, 0.15);
+}
+
+.box-recount-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.box-recount-btn.result-recount {
+  color: #854d0e;
+  background: #fefce8;
+  border-color: #fde047;
+}
+
+.box-recount-btn.result-recount:hover {
+  background: #fef08a;
+  border-color: #eab308;
+  color: #713f12;
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.18);
 }
 
 /* Pale-green containers with dashed border */
@@ -599,10 +655,30 @@ body {
   border-color: #3f6212;
 }
 
+/* Active counting box highlight - child is currently counting here */
 .flower-group-box.counting-active {
-  border-color: var(--tenali-orange);
-  background-color: #fff7ed;
-  box-shadow: 0 0 18px rgba(249, 115, 22, 0.2);
+  border-color: #f59e0b;
+  background-color: #fffdf5;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.28);
+}
+
+/* Completed counting box state */
+.flower-group-box.box-completed {
+  border-color: #22c55e;
+  background-color: #f6fdf7;
+}
+
+/* Gentle wobble / attention animation when child taps another box mid-sequence */
+.flower-group-box.box-attention {
+  animation: box-attention-shake 0.45s ease-in-out;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 22px rgba(249, 115, 22, 0.45) !important;
+}
+
+@keyframes box-attention-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
 }
 
 /* Chunky orange plus & equals signs */
@@ -1296,6 +1372,11 @@ body {
 
 /* Tablet & Mobile Wrap for Equation */
 @media (max-width: 720px) {
+  .group-header-row {
+    justify-content: space-between;
+    gap: 6px;
+  }
+
   .flower-equation-wrapper {
     flex-wrap: wrap;
     justify-content: center;
@@ -1559,8 +1640,13 @@ body {
           
           <!-- First Flower Group Container -->
           <div class="flower-group-container" id="container-group-1">
-            <div class="group-header-tag">First Group</div>
-            <div class="flower-group-box" id="flower-group-1" title="First flower group - tap to count!">
+            <div class="group-header-row">
+              <span class="group-header-tag">First Group</span>
+              <button type="button" class="box-recount-btn" id="recount-btn-group-1" data-box="flower-group-1" title="Count First Group again" aria-label="Count First Group again">
+                ↺ Recount
+              </button>
+            </div>
+            <div class="flower-group-box" id="flower-group-1" title="First flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) with yellow centers -->
             </div>
           </div>
@@ -1570,8 +1656,13 @@ body {
 
           <!-- Second Flower Group Container -->
           <div class="flower-group-container" id="container-group-2">
-            <div class="group-header-tag">Second Group</div>
-            <div class="flower-group-box" id="flower-group-2" title="Second flower group - tap to count!">
+            <div class="group-header-row">
+              <span class="group-header-tag">Second Group</span>
+              <button type="button" class="box-recount-btn" id="recount-btn-group-2" data-box="flower-group-2" title="Count Second Group again" aria-label="Count Second Group again">
+                ↺ Recount
+              </button>
+            </div>
+            <div class="flower-group-box" id="flower-group-2" title="Second flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) with yellow centers -->
             </div>
           </div>
@@ -1581,8 +1672,13 @@ body {
 
           <!-- Combined Result Group Container -->
           <div class="flower-group-container flower-result-container" id="container-group-result">
-            <div class="group-header-tag result-tag">Combined Total</div>
-            <div class="flower-group-box flower-combined-group-box" id="flower-group-result" title="Combined flower group - always shows the total sum!">
+            <div class="group-header-row">
+              <span class="group-header-tag result-tag">Combined Total</span>
+              <button type="button" class="box-recount-btn result-recount" id="recount-btn-group-result" data-box="flower-group-result" title="Count Combined Total again" aria-label="Count Combined Total again">
+                ↺ Recount
+              </button>
+            </div>
+            <div class="flower-group-box flower-combined-group-box" id="flower-group-result" title="Combined flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) showing the combined sum -->
             </div>
           </div>
@@ -1727,7 +1823,7 @@ body {
   <!-- Quest Complete Celebration Modal -->
   <div id="quest-complete-modal" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog" style="text-align: center;">
-      <img src="data:image/png;base64,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" alt="Tenali scholar mascot" width="75" height="110" style="margin: 0 auto; display: block; filter: drop-shadow(0 4px 16px rgba(249,115,22,0.45));">
+      <img src="tenali_mascot.png" alt="Tenali scholar mascot" width="75" height="110" style="margin: 0 auto; display: block; filter: drop-shadow(0 4px 16px rgba(249,115,22,0.45));">
       <h2 class="modal-title" id="modal-complete-title" style="color: var(--tenali-orange-light); font-size: 28px; margin-top: 10px;">
         Level 1 Completed!
       </h2>
@@ -1785,7 +1881,13 @@ body {
     isCountingHintActive: false,
     paletteIndex: 0,
     hasUserInteracted: false,
-    hasWelcomed: false
+    hasWelcomed: false,
+    boxCounters: {
+      'flower-group-1': 0,
+      'flower-group-2': 0,
+      'flower-group-result': 0
+    },
+    activeCountingBox: null
   };
 
   // =========================================================================
@@ -2236,21 +2338,25 @@ body {
       const angle = i * (2 * Math.PI / numPetals);
       const px = (cx + orbitR * Math.cos(angle)).toFixed(1);
       const py = (cy + orbitR * Math.sin(angle)).toFixed(1);
-      petalsHTML += `<circle cx="${px}" cy="${py}" r="${petalR}" class="flower-petal-lobe" fill="${petalColor}" />\n`;
+      petalsHTML += `<circle cx="${px}" cy="${py}" r="${petalR}" class="flower-petal-lobe" fill="${petalColor}" />
+`;
     }
 
     const digitClass = hideNumber ? 'flower-digit-text hidden-digit' : 'flower-digit-text revealed';
+    const displayVal = (number !== null && number !== undefined) ? number : '';
 
-    const numberHTML = number !== null ? `
+    const numberHTML = `
       <text x="50" y="51" 
             text-anchor="middle" 
             dominant-baseline="central" 
             class="${digitClass}" 
-            fill="#261c14">${number}</text>
-    ` : '';
+            fill="#261c14">${displayVal}</text>
+    `;
+
+    const flowerLabel = displayVal ? `Flower with number ${displayVal}` : 'Flower - tap to count';
 
     return `
-      <svg class="flower-svg" viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="Flower with number ${number}">
+      <svg class="flower-svg" viewBox="0 0 100 100" width="${size}" height="${size}" aria-label="${flowerLabel}">
         <g class="flower-graphic" id="${id}">
           <g class="petals-group">
             ${petalsHTML}
@@ -2485,6 +2591,21 @@ body {
     state.selectedAnswer = null;
     state.isCountingHintActive = false;
 
+    // Reset per-box counters and active counting sequence
+    state.boxCounters = {
+      'flower-group-1': 0,
+      'flower-group-2': 0,
+      'flower-group-result': 0
+    };
+    state.activeCountingBox = null;
+
+    ['flower-group-1', 'flower-group-2', 'flower-group-result'].forEach(id => {
+      const box = document.getElementById(id);
+      if (box) {
+        box.classList.remove('counting-active', 'box-completed', 'box-attention');
+      }
+    });
+
     const q = state.currentQuestion;
     const currentPalette = FLOWER_PALETTES[state.paletteIndex];
 
@@ -2517,25 +2638,26 @@ body {
     }
 
     // 2. Render Group 1 Box (q.num1 flowers)
+    // Child can tap any flower as 1, counting in any order!
     const group1Box = document.getElementById('flower-group-1');
     if (group1Box) {
       group1Box.innerHTML = '';
       for (let i = 1; i <= q.num1; i++) {
         const flowerDiv = document.createElement('div');
         flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-        flowerDiv.dataset.group = '1';
-        flowerDiv.dataset.countIndex = i;
+        flowerDiv.dataset.box = 'flower-group-1';
         flowerDiv.dataset.counted = 'false';
+        flowerDiv.dataset.countOrder = '';
         flowerDiv.innerHTML = createFlowerSVG({
-          number: i,
+          number: '',
           size: flowerPixelSize,
           petalColor: currentPalette.petal,
           centerColor: '#ffd54f',
-          hideNumber: true // Hidden initially, reveals on tap!
+          hideNumber: true // Hidden initially, reveals dynamic count number on tap!
         });
 
         flowerDiv.addEventListener('click', () => {
-          handleFlowerTap(flowerDiv, i);
+          handleFlowerTap(flowerDiv, 'flower-group-1');
         });
 
         group1Box.appendChild(flowerDiv);
@@ -2543,18 +2665,18 @@ body {
     }
 
     // 3. Render Group 2 Box (q.num2 flowers)
+    // Child can tap any flower as 1, counting independently!
     const group2Box = document.getElementById('flower-group-2');
     if (group2Box) {
       group2Box.innerHTML = '';
       for (let i = 1; i <= q.num2; i++) {
-        const countNumber = i;
         const flowerDiv = document.createElement('div');
         flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-        flowerDiv.dataset.group = '2';
-        flowerDiv.dataset.countIndex = countNumber;
+        flowerDiv.dataset.box = 'flower-group-2';
         flowerDiv.dataset.counted = 'false';
+        flowerDiv.dataset.countOrder = '';
         flowerDiv.innerHTML = createFlowerSVG({
-          number: countNumber,
+          number: '',
           size: flowerPixelSize,
           petalColor: currentPalette.petal,
           centerColor: '#ffd54f',
@@ -2562,7 +2684,7 @@ body {
         });
 
         flowerDiv.addEventListener('click', () => {
-          handleFlowerTap(flowerDiv, countNumber);
+          handleFlowerTap(flowerDiv, 'flower-group-2');
         });
 
         group2Box.appendChild(flowerDiv);
@@ -2572,25 +2694,26 @@ body {
     // 4. Render Combined Result Group Box:
     // ALWAYS CONTAINS EXACTLY THE SUM OF THE FIRST TWO GROUPS!
     // e.g. 2 flowers + 2 flowers = 4 flowers
+    // Child can tap any flower as 1, counting 1..answer in any order!
     const groupResultBox = document.getElementById('flower-group-result');
     if (groupResultBox) {
       groupResultBox.innerHTML = '';
       for (let i = 1; i <= q.answer; i++) {
         const flowerDiv = document.createElement('div');
         flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-        flowerDiv.dataset.group = 'result';
-        flowerDiv.dataset.countIndex = i;
+        flowerDiv.dataset.box = 'flower-group-result';
         flowerDiv.dataset.counted = 'false';
+        flowerDiv.dataset.countOrder = '';
         flowerDiv.innerHTML = createFlowerSVG({
-          number: i,
+          number: '',
           size: flowerPixelSize,
           petalColor: currentPalette.petal,
           centerColor: '#ffd54f',
-          hideNumber: true // Child can tap each flower in the combined set to count 1..answer!
+          hideNumber: true
         });
 
         flowerDiv.addEventListener('click', () => {
-          handleFlowerTap(flowerDiv, i);
+          handleFlowerTap(flowerDiv, 'flower-group-result');
         });
 
         groupResultBox.appendChild(flowerDiv);
@@ -2635,28 +2758,119 @@ body {
     updateLevelBadge();
   }
 
-  // --- Flower Tap Handler (Tactile Counting on Equation Blossoms) ---
-  function handleFlowerTap(flowerEl, number) {
-    audio.playPop(number);
-    teacherVoice.countFlower(number);
+  // --- Flower Tap Handler (Tactile Order-Irrelevant Counting) ---
+  // The child can start with any flower in the group as number 1.
+  // Each subsequent flower receives the next count in selection order.
+  function handleFlowerTap(flowerEl, boxId) {
+    if (state.isAnswered) return;
 
-    // Reveal number in flower's yellow center on tap!
+    // Prevent counting a flower twice in the same sequence
+    if (flowerEl.dataset.counted === 'true') {
+      flowerEl.classList.remove('tapped');
+      void flowerEl.offsetWidth;
+      flowerEl.classList.add('tapped');
+      return;
+    }
+
+    // Keep counting restricted to the current box.
+    // The child must not switch to another box in the middle of a counting sequence.
+    if (state.activeCountingBox && state.activeCountingBox !== boxId) {
+      const activeBoxEl = document.getElementById(state.activeCountingBox);
+      if (activeBoxEl) {
+        activeBoxEl.classList.remove('box-attention');
+        void activeBoxEl.offsetWidth;
+        activeBoxEl.classList.add('box-attention');
+        setTimeout(() => {
+          activeBoxEl.classList.remove('box-attention');
+        }, 500);
+      }
+      return;
+    }
+
+    // Lock to this box during the sequence if not already locked
+    if (!state.activeCountingBox) {
+      state.activeCountingBox = boxId;
+      const boxEl = document.getElementById(boxId);
+      if (boxEl) {
+        boxEl.classList.add('counting-active');
+      }
+    }
+
+    // Assign the next number in order of child's selection: 1, 2, 3...
+    state.boxCounters[boxId] = (state.boxCounters[boxId] || 0) + 1;
+    const currentCount = state.boxCounters[boxId];
+
+    flowerEl.dataset.counted = 'true';
+    flowerEl.dataset.countOrder = String(currentCount);
+    flowerEl.classList.remove('uncounted');
+    flowerEl.classList.add('counted');
+
+    // Reveal the dynamic count number in the flower's yellow centre
     const textElem = flowerEl.querySelector('.flower-digit-text');
-    if (textElem && textElem.classList.contains('hidden-digit')) {
+    if (textElem) {
+      textElem.textContent = currentCount;
       textElem.classList.remove('hidden-digit');
       textElem.classList.add('revealed');
     }
 
-    flowerEl.dataset.counted = 'true';
-    flowerEl.classList.remove('uncounted');
-    flowerEl.classList.add('counted');
-
+    // Tactile blossom bounce
     flowerEl.classList.remove('tapped');
-    void flowerEl.offsetWidth; // Trigger reflow for bounce
+    void flowerEl.offsetWidth;
     flowerEl.classList.add('tapped');
 
-    // If all flowers in the combined group have been tapped, speak gentle guidance
-    checkCombinedFlowersCounted();
+    // Spoken number and cheerful pop sound
+    audio.playPop(currentCount);
+    teacherVoice.countFlower(currentCount);
+
+    // Check if all flowers in this box are now counted
+    const boxEl = document.getElementById(boxId);
+    if (boxEl) {
+      const totalFlowers = boxEl.querySelectorAll('.flower-token').length;
+      if (state.boxCounters[boxId] >= totalFlowers) {
+        boxEl.classList.remove('counting-active');
+        boxEl.classList.add('box-completed');
+        // Group counting sequence is complete! Child is free to move to another box
+        state.activeCountingBox = null;
+
+        // If all flowers in the combined result box are counted, speak gentle guidance
+        if (boxId === 'flower-group-result') {
+          checkCombinedFlowersCounted();
+        }
+      }
+    }
+  }
+
+  // --- Reset / Recount Handler ---
+  // Allows child to recount the same group starting with a different flower
+  function resetBoxCounting(boxId) {
+    if (state.isAnswered) return;
+
+    const boxEl = document.getElementById(boxId);
+    if (!boxEl) return;
+
+    state.boxCounters[boxId] = 0;
+    if (state.activeCountingBox === boxId) {
+      state.activeCountingBox = null;
+    }
+
+    boxEl.classList.remove('counting-active', 'box-completed', 'box-attention');
+
+    const flowers = boxEl.querySelectorAll('.flower-token');
+    flowers.forEach(flowerEl => {
+      flowerEl.dataset.counted = 'false';
+      flowerEl.dataset.countOrder = '';
+      flowerEl.classList.remove('counted', 'tapped', 'highlighted');
+      flowerEl.classList.add('uncounted');
+
+      const textElem = flowerEl.querySelector('.flower-digit-text');
+      if (textElem) {
+        textElem.textContent = '';
+        textElem.classList.remove('revealed');
+        textElem.classList.add('hidden-digit');
+      }
+    });
+
+    audio.playPop(1);
   }
 
   let combinedCountTimer = null;
@@ -2677,19 +2891,60 @@ body {
   }
 
   // Reveal all question flowers upon hint or correct answer
+  // Ensures any uncounted flowers are filled with remaining valid numbers 1..N
   function revealAllQuestionFlowers() {
-    const allFlowers = document.querySelectorAll('.flower-equation-wrapper .flower-token');
-    allFlowers.forEach((flowerEl, idx) => {
-      const textElem = flowerEl.querySelector('.flower-digit-text');
-      if (textElem && textElem.classList.contains('hidden-digit')) {
-        setTimeout(() => {
-          textElem.classList.remove('hidden-digit');
-          textElem.classList.add('revealed');
+    const boxes = [
+      { id: 'flower-group-1', total: state.currentQuestion.num1 },
+      { id: 'flower-group-2', total: state.currentQuestion.num2 },
+      { id: 'flower-group-result', total: state.currentQuestion.answer }
+    ];
+
+    let delayIndex = 0;
+    boxes.forEach(boxInfo => {
+      const boxEl = document.getElementById(boxInfo.id);
+      if (!boxEl) return;
+
+      const flowers = Array.from(boxEl.querySelectorAll('.flower-token'));
+      const usedNumbers = new Set();
+      flowers.forEach(f => {
+        if (f.dataset.counted === 'true' && f.dataset.countOrder) {
+          usedNumbers.add(parseInt(f.dataset.countOrder, 10));
+        }
+      });
+
+      const unusedNumbers = [];
+      for (let n = 1; n <= boxInfo.total; n++) {
+        if (!usedNumbers.has(n)) {
+          unusedNumbers.push(n);
+        }
+      }
+
+      let unusedIdx = 0;
+      flowers.forEach(flowerEl => {
+        if (flowerEl.dataset.counted !== 'true') {
+          const assignedNum = unusedNumbers[unusedIdx++] || (usedNumbers.size + 1);
           flowerEl.dataset.counted = 'true';
+          flowerEl.dataset.countOrder = String(assignedNum);
           flowerEl.classList.remove('uncounted');
           flowerEl.classList.add('counted');
-        }, idx * 60);
-      }
+
+          const textElem = flowerEl.querySelector('.flower-digit-text');
+          if (textElem) {
+            textElem.textContent = assignedNum;
+          }
+
+          setTimeout(() => {
+            if (textElem) {
+              textElem.classList.remove('hidden-digit');
+              textElem.classList.add('revealed');
+            }
+          }, delayIndex * 50);
+          delayIndex++;
+        }
+      });
+
+      boxEl.classList.remove('counting-active', 'box-attention');
+      boxEl.classList.add('box-completed');
     });
   }
 
@@ -2847,7 +3102,11 @@ body {
         if (item.type === 'flower') {
           // Reveal digit
           const textElem = item.elem.querySelector('.flower-digit-text');
-          if (textElem && textElem.classList.contains('hidden-digit')) {
+          if (textElem) {
+            if (!item.elem.dataset.countOrder) {
+              textElem.textContent = item.count;
+              item.elem.dataset.countOrder = String(item.count);
+            }
             textElem.classList.remove('hidden-digit');
             textElem.classList.add('revealed');
           }
@@ -3012,6 +3271,19 @@ body {
     if (countHintBtn) {
       countHintBtn.addEventListener('click', triggerCountingHint);
     }
+
+    // Box Recount Buttons (Order-Irrelevant Counting Restart)
+    ['group-1', 'group-2', 'group-result'].forEach(suffix => {
+      const btn = document.getElementById(`recount-btn-${suffix}`);
+      if (btn) {
+        const targetBoxId = btn.dataset.box || (suffix === 'group-result' ? 'flower-group-result' : `flower-${suffix}`);
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          resetBoxCounting(targetBoxId);
+        });
+      }
+    });
 
     // Teacher Voice & Sound Toggles
     function updateVoiceTogglesUI() {

@@ -133,8 +133,13 @@
           
           <!-- First Flower Group Container -->
           <div class="flower-group-container" id="container-group-1">
-            <div class="group-header-tag">First Group</div>
-            <div class="flower-group-box" id="flower-group-1" title="First flower group - tap to count!">
+            <div class="group-header-row">
+              <span class="group-header-tag">First Group</span>
+              <button type="button" class="box-recount-btn" id="recount-btn-group-1" data-box="flower-group-1" title="Count First Group again" aria-label="Count First Group again">
+                ↺ Recount
+              </button>
+            </div>
+            <div class="flower-group-box" id="flower-group-1" title="First flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) with yellow centers -->
             </div>
           </div>
@@ -144,8 +149,13 @@
 
           <!-- Second Flower Group Container -->
           <div class="flower-group-container" id="container-group-2">
-            <div class="group-header-tag">Second Group</div>
-            <div class="flower-group-box" id="flower-group-2" title="Second flower group - tap to count!">
+            <div class="group-header-row">
+              <span class="group-header-tag">Second Group</span>
+              <button type="button" class="box-recount-btn" id="recount-btn-group-2" data-box="flower-group-2" title="Count Second Group again" aria-label="Count Second Group again">
+                ↺ Recount
+              </button>
+            </div>
+            <div class="flower-group-box" id="flower-group-2" title="Second flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) with yellow centers -->
             </div>
           </div>
@@ -155,8 +165,13 @@
 
           <!-- Combined Result Group Container -->
           <div class="flower-group-container flower-result-container" id="container-group-result">
-            <div class="group-header-tag result-tag">Combined Total</div>
-            <div class="flower-group-box flower-combined-group-box" id="flower-group-result" title="Combined flower group - always shows the total sum!">
+            <div class="group-header-row">
+              <span class="group-header-tag result-tag">Combined Total</span>
+              <button type="button" class="box-recount-btn result-recount" id="recount-btn-group-result" data-box="flower-group-result" title="Count Combined Total again" aria-label="Count Combined Total again">
+                ↺ Recount
+              </button>
+            </div>
+            <div class="flower-group-box flower-combined-group-box" id="flower-group-result" title="Combined flower group - tap any flower to start counting!">
               <!-- Injected by game.js: purple flower(s) showing the combined sum -->
             </div>
           </div>

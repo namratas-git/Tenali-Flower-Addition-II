@@ -533,6 +533,16 @@ body {
   min-width: 170px;
 }
 
+.group-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
 .group-header-tag {
   font-size: 12px;
   font-weight: 800;
@@ -543,12 +553,58 @@ body {
   padding: 3px 10px;
   border-radius: 9999px;
   border: 1px solid #c9e4c1;
+  white-space: nowrap;
 }
 
 .group-header-tag.result-tag {
   color: #854d0e;
   background: #fef3c7;
   border-color: #fde047;
+}
+
+/* Recount Pill Button for Order-Irrelevant Counting */
+.box-recount-btn {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  color: #3b6b3e;
+  background: #f1f8ed;
+  border: 1px solid #c8e0bf;
+  border-radius: 9999px;
+  padding: 2.5px 8.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  line-height: 1.35;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.box-recount-btn:hover {
+  background: #e2f2da;
+  border-color: #7cb342;
+  color: #275217;
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 2px 6px rgba(43, 122, 55, 0.15);
+}
+
+.box-recount-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.box-recount-btn.result-recount {
+  color: #854d0e;
+  background: #fefce8;
+  border-color: #fde047;
+}
+
+.box-recount-btn.result-recount:hover {
+  background: #fef08a;
+  border-color: #eab308;
+  color: #713f12;
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.18);
 }
 
 /* Pale-green containers with dashed border */
@@ -585,10 +641,30 @@ body {
   border-color: #3f6212;
 }
 
+/* Active counting box highlight - child is currently counting here */
 .flower-group-box.counting-active {
-  border-color: var(--tenali-orange);
-  background-color: #fff7ed;
-  box-shadow: 0 0 18px rgba(249, 115, 22, 0.2);
+  border-color: #f59e0b;
+  background-color: #fffdf5;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.28);
+}
+
+/* Completed counting box state */
+.flower-group-box.box-completed {
+  border-color: #22c55e;
+  background-color: #f6fdf7;
+}
+
+/* Gentle wobble / attention animation when child taps another box mid-sequence */
+.flower-group-box.box-attention {
+  animation: box-attention-shake 0.45s ease-in-out;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 22px rgba(249, 115, 22, 0.45) !important;
+}
+
+@keyframes box-attention-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
 }
 
 /* Chunky orange plus & equals signs */
@@ -1282,6 +1358,11 @@ body {
 
 /* Tablet & Mobile Wrap for Equation */
 @media (max-width: 720px) {
+  .group-header-row {
+    justify-content: space-between;
+    gap: 6px;
+  }
+
   .flower-equation-wrapper {
     flex-wrap: wrap;
     justify-content: center;
