@@ -409,23 +409,24 @@
     }
 
     // 5. Correct Answer Interaction:
-    // "We have [total] flowers in total!"
+    // "Excellent! [num1] plus [num2] is [answer]. Good job!"
     celebrateCorrect(num1, num2, answer) {
-      let total;
-      if (typeof answer === 'number') {
-        total = answer;
-      } else if (typeof num1 === 'number' && typeof num2 === 'number') {
-        total = num1 + num2;
-      } else if (typeof num1 === 'number') {
-        total = num1;
-      } else if (state.currentQuestion) {
-        total = state.currentQuestion.answer;
-      } else {
-        total = 4;
+      if (answer === undefined && state.currentQuestion) {
+        answer = state.currentQuestion.answer;
+        num1 = state.currentQuestion.num1;
+        num2 = state.currentQuestion.num2;
       }
-      const wAns = this.getWord(total);
-      const noun = total === 1 ? 'flower' : 'flowers';
-      const text = `We have ${wAns} ${noun} in total!`;
+      if (num1 === undefined && state.currentQuestion) {
+        num1 = state.currentQuestion.num1;
+      }
+      if (num2 === undefined && state.currentQuestion) {
+        num2 = state.currentQuestion.num2;
+      }
+      const w1 = this.getWord(num1);
+      const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
+      const w2 = this.getWord(num2);
+      const wAns = this.getWord(answer);
+      const text = `Excellent! ${cap1} plus ${w2} is ${wAns}. Good job!`;
       this.speak(text);
     }
 
@@ -908,12 +909,19 @@
     checkCombinedFlowersCounted();
   }
 
+  let combinedCountTimer = null;
+
   function checkCombinedFlowersCounted() {
     const uncountedResult = document.querySelectorAll('#flower-group-result .flower-token[data-counted="false"]');
     if (uncountedResult.length === 0 && !state.isAnswered) {
       const q = state.currentQuestion;
-      setTimeout(() => {
-        teacherVoice.guideEquation(q.num1, q.num2, q.answer);
+      if (combinedCountTimer) {
+        clearTimeout(combinedCountTimer);
+      }
+      combinedCountTimer = setTimeout(() => {
+        if (!state.isAnswered) {
+          teacherVoice.guideEquation(q.num1, q.num2, q.answer);
+        }
       }, 450);
     }
   }
@@ -940,6 +948,11 @@
   // =========================================================================
   function handleAnswerSelect(selectedVal, btnElement, event) {
     if (state.isAnswered) return;
+
+    if (combinedCountTimer) {
+      clearTimeout(combinedCountTimer);
+      combinedCountTimer = null;
+    }
 
     audio.init();
 
