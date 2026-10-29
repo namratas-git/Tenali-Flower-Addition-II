@@ -677,6 +677,7 @@ body {
 }
 
 /* Chunky orange plus & equals signs - vertically centered with dashed flower boxes */
+/* Chunky orange plus & equals signs - vertically centered with dashed flower boxes */
 .math-operator-symbol {
   font-family: var(--font-sans);
   font-size: 42px;
@@ -686,24 +687,44 @@ body {
   flex-shrink: 0;
   user-select: none;
   animation: float-operator 2.5s ease-in-out infinite alternate;
-  transition: transform 0.25s ease, color 0.25s ease;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              color 0.4s ease, 
+              text-shadow 0.4s ease, 
+              filter 0.4s ease;
   align-self: center;
   margin-top: 24px; /* Centers operator with the flower boxes (compensating for header tag) */
 }
-  font-family: var(--font-sans);
-  font-size: 44px;
-  font-weight: 900;
-  color: #f59e0b;
-  text-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
-  flex-shrink: 0;
-  user-select: none;
-  animation: float-operator 2.5s ease-in-out infinite alternate;
-  transition: transform 0.25s ease, color 0.25s ease;
+
+/* Soft, noticeable glow for equation symbols during Count With Me */
+.math-operator-symbol.symbol-glow {
+  color: #ea580c;
+  transform: scale(1.18);
+  text-shadow: 0 0 14px rgba(249, 115, 22, 0.85),
+               0 0 28px rgba(251, 146, 60, 0.6),
+               0 2px 6px rgba(194, 65, 12, 0.3);
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.75));
+  animation: symbol-gentle-pulse 2s ease-in-out infinite alternate;
+  z-index: 5;
+}
+
+@keyframes symbol-gentle-pulse {
+  0% {
+    transform: scale(1.15);
+    text-shadow: 0 0 12px rgba(249, 115, 22, 0.75),
+                 0 0 22px rgba(251, 146, 60, 0.5);
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+  }
+  100% {
+    transform: scale(1.22);
+    text-shadow: 0 0 18px rgba(249, 115, 22, 0.95),
+                 0 0 32px rgba(251, 146, 60, 0.75);
+    filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.85));
+  }
 }
 
 .math-operator-symbol.highlighted {
   color: #ea580c;
-  transform: scale(1.35);
+  transform: scale(1.2);
   text-shadow: 0 0 18px rgba(249, 115, 22, 0.9);
   z-index: 5;
 }

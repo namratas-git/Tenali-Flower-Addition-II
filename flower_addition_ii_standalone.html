@@ -691,6 +691,7 @@ body {
 }
 
 /* Chunky orange plus & equals signs - vertically centered with dashed flower boxes */
+/* Chunky orange plus & equals signs - vertically centered with dashed flower boxes */
 .math-operator-symbol {
   font-family: var(--font-sans);
   font-size: 42px;
@@ -700,24 +701,44 @@ body {
   flex-shrink: 0;
   user-select: none;
   animation: float-operator 2.5s ease-in-out infinite alternate;
-  transition: transform 0.25s ease, color 0.25s ease;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              color 0.4s ease, 
+              text-shadow 0.4s ease, 
+              filter 0.4s ease;
   align-self: center;
   margin-top: 24px; /* Centers operator with the flower boxes (compensating for header tag) */
 }
-  font-family: var(--font-sans);
-  font-size: 44px;
-  font-weight: 900;
-  color: #f59e0b;
-  text-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
-  flex-shrink: 0;
-  user-select: none;
-  animation: float-operator 2.5s ease-in-out infinite alternate;
-  transition: transform 0.25s ease, color 0.25s ease;
+
+/* Soft, noticeable glow for equation symbols during Count With Me */
+.math-operator-symbol.symbol-glow {
+  color: #ea580c;
+  transform: scale(1.18);
+  text-shadow: 0 0 14px rgba(249, 115, 22, 0.85),
+               0 0 28px rgba(251, 146, 60, 0.6),
+               0 2px 6px rgba(194, 65, 12, 0.3);
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.75));
+  animation: symbol-gentle-pulse 2s ease-in-out infinite alternate;
+  z-index: 5;
+}
+
+@keyframes symbol-gentle-pulse {
+  0% {
+    transform: scale(1.15);
+    text-shadow: 0 0 12px rgba(249, 115, 22, 0.75),
+                 0 0 22px rgba(251, 146, 60, 0.5);
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+  }
+  100% {
+    transform: scale(1.22);
+    text-shadow: 0 0 18px rgba(249, 115, 22, 0.95),
+                 0 0 32px rgba(251, 146, 60, 0.75);
+    filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.85));
+  }
 }
 
 .math-operator-symbol.highlighted {
   color: #ea580c;
-  transform: scale(1.35);
+  transform: scale(1.2);
   text-shadow: 0 0 18px rgba(249, 115, 22, 0.9);
   z-index: 5;
 }
@@ -1917,7 +1938,8 @@ body {
       'flower-group-2': 0,
       'flower-group-result': 0
     },
-    activeCountingBox: null
+    activeCountingBox: null,
+    hintInterval: null
   };
 
   // =========================================================================
@@ -2613,6 +2635,33 @@ body {
   let confetti;
 
   // =========================================================================
+  // EQUATION SYMBOLS GLOW & COUNTING HINT CONTROLS
+  // Provides gentle, noticeable glow to guide attention through addition steps
+  // =========================================================================
+  function resetEquationSymbolsGlow() {
+    const plusElem = document.querySelector('.math-plus-symbol');
+    const equalsElem = document.querySelector('.math-equals-symbol');
+    if (plusElem) {
+      plusElem.classList.remove('symbol-glow', 'highlighted');
+    }
+    if (equalsElem) {
+      equalsElem.classList.remove('symbol-glow', 'highlighted');
+    }
+  }
+
+  function stopCountingHint() {
+    if (state.hintInterval) {
+      clearInterval(state.hintInterval);
+      state.hintInterval = null;
+    }
+    state.isCountingHintActive = false;
+    document.querySelectorAll('.flower-token.highlighted').forEach(el => {
+      el.classList.remove('highlighted');
+    });
+    resetEquationSymbolsGlow();
+  }
+
+  // =========================================================================
   // RENDER QUESTION & VISUAL ADDITION EQUATION
   // [Group 1 of flowers] + [Group 2 of flowers] = [Combined group of flowers]
   // =========================================================================
@@ -2620,6 +2669,9 @@ body {
     state.isAnswered = false;
     state.selectedAnswer = null;
     state.isCountingHintActive = false;
+
+    // Reset any active hint and equation symbol glows
+    stopCountingHint();
 
     // Reset per-box counters and active counting sequence
     state.boxCounters = {
@@ -2878,6 +2930,8 @@ body {
   // resetting counting numbers and progress for this round without advancing
   // the round or restarting the entire level.
   function resetRoundCounting() {
+    stopCountingHint();
+
     state.boxCounters = {
       'flower-group-1': 0,
       'flower-group-2': 0,
@@ -3000,6 +3054,8 @@ body {
   function handleAnswerSelect(selectedVal, btnElement, event) {
     if (state.isAnswered) return;
 
+    stopCountingHint();
+
     if (combinedCountTimer) {
       clearTimeout(combinedCountTimer);
       combinedCountTimer = null;
@@ -3107,10 +3163,17 @@ body {
 
   // =========================================================================
   // VISUAL EQUATION COUNTING HINT ("Count with Me")
-  // Walks sequentially through Group 1, Group 2, and the Combined Result
+  // Walks sequentially through Group 1, Group 2, and the Combined Result.
+  // Adds a gentle, noticeable glow to equation symbols:
+  // - Highlights + after Group 1 finishes
+  // - Keeps + glowing while Group 2 counts
+  // - Highlights = after Group 2 finishes (turning off +)
+  // - Keeps = glowing while Combined Total counts
+  // - Resets both symbols when sequence completes, restarts, or new round begins
   // =========================================================================
   function triggerCountingHint() {
     if (state.isCountingHintActive || state.isAnswered) return;
+    stopCountingHint();
     state.isCountingHintActive = true;
 
     audio.init();
@@ -3118,34 +3181,58 @@ body {
     const g1Flowers = Array.from(document.querySelectorAll('#flower-group-1 .flower-token'));
     const g2Flowers = Array.from(document.querySelectorAll('#flower-group-2 .flower-token'));
     const resFlowers = Array.from(document.querySelectorAll('#flower-group-result .flower-token'));
-
-    // Sequence of elements to highlight:
-    // Group 1 flowers -> Plus sign -> Group 2 flowers -> Equals sign -> Combined flowers
-    const sequence = [];
-    g1Flowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, label: 'g1' }));
-    
     const plusElem = document.querySelector('.math-plus-symbol');
-    if (plusElem) sequence.push({ elem: plusElem, type: 'operator', text: 'plus' });
-
-    g2Flowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, label: 'g2' }));
-
     const equalsElem = document.querySelector('.math-equals-symbol');
-    if (equalsElem) sequence.push({ elem: equalsElem, type: 'operator', text: 'equals' });
 
-    resFlowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, label: 'res' }));
+    // Sequence of steps:
+    // 1. Group 1 flowers (count 1..num1)
+    // 2. Plus sign (First group complete -> highlight + with soft glow)
+    // 3. Group 2 flowers (count 1..num2, keeping + glowing)
+    // 4. Equals sign (Second group complete -> switch glow to =)
+    // 5. Combined flowers (count 1..answer, keeping = glowing)
+    const sequence = [];
+    g1Flowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, group: 'g1' }));
+    
+    if (plusElem) sequence.push({ elem: plusElem, type: 'operator', symbol: 'plus' });
+
+    g2Flowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, group: 'g2' }));
+
+    if (equalsElem) sequence.push({ elem: equalsElem, type: 'operator', symbol: 'equals' });
+
+    resFlowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, group: 'res' }));
 
     let stepIndex = 0;
-    const interval = setInterval(() => {
-      // Clear previous highlights
-      document.querySelectorAll('.flower-token.highlighted, .math-operator-symbol.highlighted').forEach(el => {
+    state.hintInterval = setInterval(() => {
+      // Clear previous flower highlights (symbols retain glow according to sequence phase)
+      document.querySelectorAll('.flower-token.highlighted').forEach(el => {
         el.classList.remove('highlighted');
       });
 
       if (stepIndex < sequence.length) {
         const item = sequence[stepIndex];
-        item.elem.classList.add('highlighted');
 
-        if (item.type === 'flower') {
+        if (item.type === 'operator') {
+          if (item.symbol === 'plus') {
+            // First Group completed: Highlight + with a soft, noticeable glow
+            if (plusElem) {
+              plusElem.classList.add('symbol-glow');
+            }
+            audio.playPop(1);
+            teacherVoice.speak("Plus!");
+          } else if (item.symbol === 'equals') {
+            // Second Group completed: Keep + glowing until this step, then switch to =
+            if (plusElem) {
+              plusElem.classList.remove('symbol-glow');
+            }
+            if (equalsElem) {
+              equalsElem.classList.add('symbol-glow');
+            }
+            audio.playPop(1);
+            teacherVoice.speak("Equals!");
+          }
+        } else if (item.type === 'flower') {
+          item.elem.classList.add('highlighted');
+
           // Reveal digit
           const textElem = item.elem.querySelector('.flower-digit-text');
           if (textElem) {
@@ -3166,11 +3253,8 @@ body {
 
         stepIndex++;
       } else {
-        clearInterval(interval);
-        document.querySelectorAll('.flower-token.highlighted, .math-operator-symbol.highlighted').forEach(el => {
-          el.classList.remove('highlighted');
-        });
-        state.isCountingHintActive = false;
+        // Sequence completed: clean up interval, highlights, and reset symbol glows
+        stopCountingHint();
 
         const total = state.currentQuestion.answer;
         teacherVoice.guideEquation(state.currentQuestion.num1, state.currentQuestion.num2, total);
