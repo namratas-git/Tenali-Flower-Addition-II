@@ -2133,35 +2133,49 @@ body {
       this.speak(cap + "!");
     }
 
-    // 4. Guide Counting: When all flowers are tapped -> "We have four flowers." (Exact Activity I)
+    // 4. Guide Counting: When flowers are counted -> "We have [total] flowers in total!"
     guideCounting(num1, num2, answer) {
-      if (answer === undefined && num1 !== undefined) {
-        answer = num1;
+      let total;
+      if (typeof answer === 'number') {
+        total = answer;
+      } else if (typeof num1 === 'number' && typeof num2 === 'number') {
+        total = num1 + num2;
+      } else if (typeof num1 === 'number') {
+        total = num1;
+      } else if (state.currentQuestion) {
+        total = state.currentQuestion.answer;
+      } else {
+        total = 4;
       }
-      const wAns = this.getWord(answer);
-      const noun = answer === 1 ? 'flower' : 'flowers';
-      const text = `We have ${wAns} ${noun}.`;
+      const wAns = this.getWord(total);
+      const noun = total === 1 ? 'flower' : 'flowers';
+      const text = `We have ${wAns} ${noun} in total!`;
       this.speak(text);
     }
 
-    // Alias for equation guidance to preserve Activity I voice line
+    // Alias for equation guidance
     guideEquation(num1, num2, answer) {
       this.guideCounting(num1, num2, answer);
     }
 
-    // 5. Correct Answer Interaction: (Exact Activity I)
-    // "Excellent! [num1] plus [num2] is [answer]. Good job!"
+    // 5. Correct Answer Interaction:
+    // "We have [total] flowers in total!"
     celebrateCorrect(num1, num2, answer) {
-      if (answer === undefined && state.currentQuestion) {
-        answer = num1;
-        num1 = state.currentQuestion.num1;
-        num2 = state.currentQuestion.num2;
+      let total;
+      if (typeof answer === 'number') {
+        total = answer;
+      } else if (typeof num1 === 'number' && typeof num2 === 'number') {
+        total = num1 + num2;
+      } else if (typeof num1 === 'number') {
+        total = num1;
+      } else if (state.currentQuestion) {
+        total = state.currentQuestion.answer;
+      } else {
+        total = 4;
       }
-      const w1 = this.getWord(num1);
-      const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
-      const w2 = this.getWord(num2);
-      const wAns = this.getWord(answer);
-      const text = `Excellent! ${cap1} plus ${w2} is ${wAns}. Good job!`;
+      const wAns = this.getWord(total);
+      const noun = total === 1 ? 'flower' : 'flowers';
+      const text = `We have ${wAns} ${noun} in total!`;
       this.speak(text);
     }
 
