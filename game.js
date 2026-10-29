@@ -42,7 +42,10 @@
       'flower-group-result': 0
     },
     activeCountingBox: null,
-    hintInterval: null
+    hintInterval: null,
+    currentStage: 'group1', // 'group1' -> 'group2' -> 'counting_total' -> 'total_announced' -> 'answer'
+    isAnswerSelectionEnabled: false,
+    hasAnnouncedTotal: false
   };
 
   // =========================================================================
@@ -384,35 +387,35 @@
     }
 
     // 3. Count Single Flower: "One!", "Two!", "Three!" (Exact Activity I)
-    countFlower(n) {
+    countFlower(n, onEnd) {
       const word = this.getWord(n);
       const cap = word.charAt(0).toUpperCase() + word.slice(1);
-      this.speak(cap + "!");
+      this.speak(cap + "!", onEnd);
     }
 
-    // 4. Guide Counting: When flowers are counted -> "We have [total] flowers in total!"
-    guideCounting(num1, num2, answer) {
-      let total;
-      if (typeof answer === 'number') {
-        total = answer;
-      } else if (typeof num1 === 'number' && typeof num2 === 'number') {
-        total = num1 + num2;
-      } else if (typeof num1 === 'number') {
-        total = num1;
+    // 4. Announce Total Flowers: "We have [total] flowers in total."
+    announceTotal(total, onEnd) {
+      let countVal;
+      if (typeof total === 'number') {
+        countVal = total;
       } else if (state.currentQuestion) {
-        total = state.currentQuestion.answer;
+        countVal = state.currentQuestion.answer;
       } else {
-        total = 4;
+        countVal = 4;
       }
-      const wAns = this.getWord(total);
-      const noun = total === 1 ? 'flower' : 'flowers';
-      const text = `We have ${wAns} ${noun} in total!`;
-      this.speak(text);
+      const wAns = this.getWord(countVal);
+      const noun = countVal === 1 ? 'flower' : 'flowers';
+      const text = `We have ${wAns} ${noun} in total.`;
+      this.speak(text, onEnd);
     }
 
-    // Alias for equation guidance
+    // Aliases for backwards compatibility
+    guideCounting(num1, num2, answer) {
+      this.announceTotal(answer);
+    }
+
     guideEquation(num1, num2, answer) {
-      this.guideCounting(num1, num2, answer);
+      this.announceTotal(answer);
     }
 
     // 5. Correct Answer Interaction:
@@ -763,6 +766,232 @@
     resetEquationSymbolsGlow();
   }
 
+  // --- Answer Buttons Disabled / Enabled State Controller ---
+  function setAnswerButtonsEnabled(enabled) {
+    state.isAnswerSelectionEnabled = enabled;
+    const answerContainer = document.getElementById('flower-answer-buttons');
+    if (!answerContainer) return;
+
+    const btns = answerContainer.querySelectorAll('.flower-btn');
+    btns.forEach(btn => {
+      btn.disabled = !enabled;
+      if (enabled) {
+        btn.classList.remove('disabled');
+        btn.classList.add('unlocked');
+        setTimeout(() => btn.classList.remove('unlocked'), 600);
+      } else {
+        btn.classList.add('disabled');
+        btn.classList.remove('unlocked');
+      }
+    });
+  }
+
+  // --- Stage Two: Automatically Reveal Combined Total Flowers ---
+  // As the child counts flowers in either First Group or Second Group:
+  // Each valid counting tap automatically reveals exactly one corresponding flower into the Combined Total box.
+  // These flowers initially appear unnumbered (blank sunny yellow centre).
+  // The child must never have to tap the blank Combined Total box to make flowers appear.
+  function spawnUnnumberedTotalFlower() {
+    const q = state.currentQuestion;
+    if (!q) return null;
+
+    const resBox = document.getElementById('flower-group-result');
+    if (!resBox) return null;
+
+    // Do not reveal more flowers than the mathematical sum
+    if (resBox.children.length >= q.answer) return null;
+
+    const currentPalette = FLOWER_PALETTES[state.paletteIndex];
+
+    let flowerSizeClass = '';
+    let flowerPixelSize = 68;
+    if (q.answer <= 4) {
+      flowerSizeClass = 'size-lg';
+      flowerPixelSize = 76;
+    } else if (q.answer <= 6) {
+      flowerSizeClass = 'size-md';
+      flowerPixelSize = 64;
+    } else {
+      flowerSizeClass = 'size-sm';
+      flowerPixelSize = 54;
+    }
+
+    const flowerDiv = document.createElement('div');
+    flowerDiv.className = `flower-token ${flowerSizeClass} uncounted revealing`;
+    flowerDiv.dataset.box = 'flower-group-result';
+    flowerDiv.dataset.counted = 'false';
+    flowerDiv.dataset.countOrder = '';
+
+    flowerDiv.innerHTML = createFlowerSVG({
+      number: '',
+      size: flowerPixelSize,
+      petalColor: currentPalette.petal,
+      centerColor: '#ffd54f',
+      hideNumber: true // Initially unnumbered: blank sunny yellow centre
+    });
+
+    // Clicking a flower in Combined Total is handled by handleCombinedFlowerTap
+    flowerDiv.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleCombinedFlowerTap(flowerDiv);
+    });
+
+    resBox.appendChild(flowerDiv);
+    return flowerDiv;
+  }
+
+  // --- Stage Three: Count the Combined Total Flowers ---
+  // Once both First Group and Second Group are fully counted, the child independently
+  // counts all the revealed flowers in the Combined Total box.
+  // Child can tap revealed flowers in any order; numbers (1, 2, 3...) are assigned
+  // sequentially according to tap order.
+  function handleCombinedFlowerTap(flowerEl) {
+    if (state.isAnswered || state.isCountingHintActive) return;
+
+    // Stage gating: Can only count total flowers once both groups are completed
+    if (state.currentStage !== 'counting_total') {
+      const targetBoxId = state.currentStage === 'group1' ? 'flower-group-1' : 'flower-group-2';
+      const targetBox = document.getElementById(targetBoxId);
+      if (targetBox) {
+        targetBox.classList.remove('box-attention');
+        void targetBox.offsetWidth;
+        targetBox.classList.add('box-attention');
+        setTimeout(() => targetBox.classList.remove('box-attention'), 500);
+      }
+      return;
+    }
+
+    // Tapping an already-counted flower provides tactile bounce without changing count or number
+    if (flowerEl.dataset.counted === 'true') {
+      flowerEl.classList.remove('tapped');
+      void flowerEl.offsetWidth;
+      flowerEl.classList.add('tapped');
+      const prevOrder = parseInt(flowerEl.dataset.countOrder, 10) || 1;
+      audio.playPop(prevOrder);
+      return;
+    }
+
+    const q = state.currentQuestion;
+    if (!q) return;
+
+    // Lock to combined box during sequence if not already locked
+    if (!state.activeCountingBox) {
+      state.activeCountingBox = 'flower-group-result';
+      const resBox = document.getElementById('flower-group-result');
+      if (resBox) {
+        resBox.classList.add('counting-active');
+      }
+    }
+
+    state.boxCounters['flower-group-result'] = (state.boxCounters['flower-group-result'] || 0) + 1;
+    const currentCount = state.boxCounters['flower-group-result'];
+
+    flowerEl.dataset.counted = 'true';
+    flowerEl.dataset.countOrder = String(currentCount);
+    flowerEl.classList.remove('uncounted');
+    flowerEl.classList.add('counted');
+
+    // Reveal number in sunny yellow center
+    const textElem = flowerEl.querySelector('.flower-digit-text');
+    if (textElem) {
+      textElem.textContent = currentCount;
+      textElem.classList.remove('hidden-digit');
+      textElem.classList.add('revealed');
+    }
+
+    // Tactile blossom bounce
+    flowerEl.classList.remove('tapped');
+    void flowerEl.offsetWidth;
+    flowerEl.classList.add('tapped');
+
+    // Audio pop and speech
+    audio.playPop(currentCount);
+    teacherVoice.countFlower(currentCount);
+
+    // Box completion check: When all total flowers have been counted
+    if (currentCount >= q.answer) {
+      const resBox = document.getElementById('flower-group-result');
+      if (resBox) {
+        resBox.classList.remove('counting-active');
+        resBox.classList.add('box-completed');
+      }
+
+      const equalsElem = document.querySelector('.math-equals-symbol');
+      if (equalsElem) {
+        equalsElem.classList.remove('symbol-glow');
+      }
+
+      state.activeCountingBox = null;
+      state.currentStage = 'total_announced';
+
+      // Stage Four: Play spoken total announcement, then enable answer buttons
+      if (!state.hasAnnouncedTotal) {
+        state.hasAnnouncedTotal = true;
+        triggerTotalAnnouncement();
+      }
+    }
+  }
+
+  function revealCombinedTotalFlowers() {
+    const q = state.currentQuestion;
+    if (!q) return;
+    const resBox = document.getElementById('flower-group-result');
+    if (!resBox) return;
+    while (resBox.children.length < q.answer) {
+      spawnUnnumberedTotalFlower();
+    }
+  }
+
+  function revealNextCombinedFlower() {
+    return spawnUnnumberedTotalFlower();
+  }
+
+  // --- Timers for Spoken Total Announcement ---
+  let totalAnnouncementTimer = null;
+  let totalUnlockTimer = null;
+
+  function clearAnnouncementTimers() {
+    if (totalAnnouncementTimer) {
+      clearTimeout(totalAnnouncementTimer);
+      totalAnnouncementTimer = null;
+    }
+    if (totalUnlockTimer) {
+      clearTimeout(totalUnlockTimer);
+      totalUnlockTimer = null;
+    }
+  }
+
+  // Plays "We have [total] flowers in total." after all combined total flowers are counted,
+  // then enables answer buttons once the speech finishes.
+  function triggerTotalAnnouncement(onComplete) {
+    clearAnnouncementTimers();
+    const q = state.currentQuestion;
+    if (!q) return;
+
+    // Small delay (450ms) to let the last flower count ("Four!") be voiced clearly
+    totalAnnouncementTimer = setTimeout(() => {
+      totalAnnouncementTimer = null;
+      if (state.isAnswered) return;
+
+      const finishAnnouncement = () => {
+        if (totalUnlockTimer) {
+          clearTimeout(totalUnlockTimer);
+          totalUnlockTimer = null;
+        }
+        if (!state.isAnswered) {
+          state.currentStage = 'answer';
+          setAnswerButtonsEnabled(true);
+          if (onComplete) onComplete();
+        }
+      };
+
+      // Safety fallback timer to unlock answer buttons even if browser speech hangs
+      totalUnlockTimer = setTimeout(finishAnnouncement, 4000);
+
+      teacherVoice.announceTotal(q.answer, finishAnnouncement);
+    }, 450);
+  }
+
   // =========================================================================
   // RENDER QUESTION & VISUAL ADDITION EQUATION
   // [Group 1 of flowers] + [Group 2 of flowers] = [Combined group of flowers]
@@ -771,6 +1000,11 @@
     state.isAnswered = false;
     state.selectedAnswer = null;
     state.isCountingHintActive = false;
+    state.currentStage = 'group1';
+    state.isAnswerSelectionEnabled = false;
+    state.hasAnnouncedTotal = false;
+
+    clearAnnouncementTimers();
 
     // Reset any active hint and equation symbol glows
     stopCountingHint();
@@ -878,44 +1112,24 @@
       }
     }
 
-    // 4. Render Combined Result Group Box:
-    // ALWAYS CONTAINS EXACTLY THE SUM OF THE FIRST TWO GROUPS!
-    // e.g. 2 flowers + 2 flowers = 4 flowers
-    // Child can tap any flower as 1, counting 1..answer in any order!
+    // 4. Combined Result Group Box:
+    // STARTS COMPLETELY BLANK!
+    // Total flowers appear one-by-one automatically as Group 1 and Group 2 flowers are counted.
     const groupResultBox = document.getElementById('flower-group-result');
     if (groupResultBox) {
       groupResultBox.innerHTML = '';
-      for (let i = 1; i <= q.answer; i++) {
-        const flowerDiv = document.createElement('div');
-        flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-        flowerDiv.dataset.box = 'flower-group-result';
-        flowerDiv.dataset.counted = 'false';
-        flowerDiv.dataset.countOrder = '';
-        flowerDiv.innerHTML = createFlowerSVG({
-          number: '',
-          size: flowerPixelSize,
-          petalColor: currentPalette.petal,
-          centerColor: '#ffd54f',
-          hideNumber: true
-        });
-
-        flowerDiv.addEventListener('click', () => {
-          handleFlowerTap(flowerDiv, 'flower-group-result');
-        });
-
-        groupResultBox.appendChild(flowerDiv);
-      }
     }
 
     // 5. Render Three Flower-Shaped Answer Buttons
-    // Answer numbers appear directly inside yellow centres!
+    // Answer buttons start DISABLED until total counting is completed!
     const answerContainer = document.getElementById('flower-answer-buttons');
     if (answerContainer) {
       answerContainer.innerHTML = '';
 
       q.options.forEach((val) => {
         const btn = document.createElement('button');
-        btn.className = 'flower-btn';
+        btn.className = 'flower-btn disabled';
+        btn.disabled = true;
         btn.dataset.value = val;
         btn.setAttribute('aria-label', `Flower option ${val}`);
 
@@ -946,16 +1160,40 @@
   }
 
   // --- Flower Tap Handler (Tactile Order-Irrelevant Counting) ---
-  // The child can start with any flower in the group as number 1.
-  // Each subsequent flower receives the next count in selection order.
+  // Learning Sequence:
+  // Count First Group -> Count Second Group -> Count Combined Total Flowers -> Select Correct Answer
+  // Each valid tap in First or Second Group automatically reveals one unnumbered flower in Combined Total box!
   function handleFlowerTap(flowerEl, boxId) {
-    if (state.isAnswered) return;
+    if (state.isAnswered || state.isCountingHintActive) return;
+
+    if (boxId === 'flower-group-result') {
+      handleCombinedFlowerTap(flowerEl);
+      return;
+    }
 
     // Prevent counting a flower twice in the same sequence
     if (flowerEl.dataset.counted === 'true') {
       flowerEl.classList.remove('tapped');
       void flowerEl.offsetWidth;
       flowerEl.classList.add('tapped');
+      const prevOrder = parseInt(flowerEl.dataset.countOrder, 10) || 1;
+      audio.playPop(prevOrder);
+      return;
+    }
+
+    const q = state.currentQuestion;
+    if (!q) return;
+
+    // Sequential stage gating:
+    // If child taps Group 2 while Group 1 is not finished, gently guide to Group 1
+    if (boxId === 'flower-group-2' && state.currentStage === 'group1') {
+      const box1El = document.getElementById('flower-group-1');
+      if (box1El) {
+        box1El.classList.remove('box-attention');
+        void box1El.offsetWidth;
+        box1El.classList.add('box-attention');
+        setTimeout(() => box1El.classList.remove('box-attention'), 500);
+      }
       return;
     }
 
@@ -1009,30 +1247,70 @@
     audio.playPop(currentCount);
     teacherVoice.countFlower(currentCount);
 
-    // Check if all flowers in this box are now counted
+    // Stage Two: Automatically Reveal exactly one corresponding flower into Combined Total box
+    spawnUnnumberedTotalFlower();
+
     const boxEl = document.getElementById(boxId);
-    if (boxEl) {
-      const totalFlowers = boxEl.querySelectorAll('.flower-token').length;
-      if (state.boxCounters[boxId] >= totalFlowers) {
-        boxEl.classList.remove('counting-active');
-        boxEl.classList.add('box-completed');
-        // Group counting sequence is complete! Child is free to move to another box
+
+    // --- Box Completion Checks ---
+    if (boxId === 'flower-group-1') {
+      if (state.boxCounters['flower-group-1'] >= q.num1) {
+        if (boxEl) {
+          boxEl.classList.remove('counting-active');
+          boxEl.classList.add('box-completed');
+        }
+        // Group 1 complete: Activate gentle glow on plus (+) sign!
+        const plusElem = document.querySelector('.math-plus-symbol');
+        if (plusElem) {
+          plusElem.classList.add('symbol-glow');
+        }
+        // Advance stage to Group 2, unlock active box
+        state.currentStage = 'group2';
+        state.activeCountingBox = null;
+      }
+    } else if (boxId === 'flower-group-2') {
+      if (state.boxCounters['flower-group-2'] >= q.num2) {
+        if (boxEl) {
+          boxEl.classList.remove('counting-active');
+          boxEl.classList.add('box-completed');
+        }
+        // Group 2 complete: Turn off plus glow, activate gentle glow on equals (=) sign!
+        const plusElem = document.querySelector('.math-plus-symbol');
+        if (plusElem) {
+          plusElem.classList.remove('symbol-glow');
+        }
+        const equalsElem = document.querySelector('.math-equals-symbol');
+        if (equalsElem) {
+          equalsElem.classList.add('symbol-glow');
+        }
+        // Advance stage to counting_total, unlock active box
+        state.currentStage = 'counting_total';
         state.activeCountingBox = null;
 
-        // If all flowers in the combined result box are counted, speak gentle guidance
-        if (boxId === 'flower-group-result') {
-          checkCombinedFlowersCounted();
+        // Highlight Combined Total box to invite child to count the total flowers
+        const resBox = document.getElementById('flower-group-result');
+        if (resBox) {
+          resBox.classList.add('counting-active');
         }
       }
     }
   }
 
   // --- Reset Round Counting Handler ("Count Again") ---
-  // Restarts the current round's counting sequence from the beginning,
-  // resetting counting numbers and progress for this round without advancing
-  // the round or restarting the entire level.
+  // Restarts the current round's counting sequence from the beginning:
+  // - Clears all counting numbers from First Group
+  // - Clears all counting numbers from Second Group
+  // - Removes all flowers from Combined Total box (returns to completely blank state)
+  // - Resets total group's independent counting sequence
+  // - Resets plus and equals glow effects
+  // - Resets counting progress, announcement state, and answer-selection state (disabled)
+  // - Allows repeating sequence for same question without altering level or score.
   function resetRoundCounting() {
     stopCountingHint();
+    clearAnnouncementTimers();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
 
     state.boxCounters = {
       'flower-group-1': 0,
@@ -1040,13 +1318,31 @@
       'flower-group-result': 0
     };
     state.activeCountingBox = null;
+    state.currentStage = 'group1';
+    state.isAnswered = false;
+    state.hasAnnouncedTotal = false;
 
-    if (combinedCountTimer) {
-      clearTimeout(combinedCountTimer);
-      combinedCountTimer = null;
+    // Reset equation symbol glows
+    resetEquationSymbolsGlow();
+
+    // Reset answer selection state (disabled)
+    setAnswerButtonsEnabled(false);
+
+    // Reset target equation text to '?'
+    const qTarget = document.getElementById('q-target');
+    if (qTarget) {
+      qTarget.textContent = '?';
+      qTarget.classList.remove('solved');
     }
 
-    ['flower-group-1', 'flower-group-2', 'flower-group-result'].forEach(id => {
+    // Reset feedback ribbon
+    const feedbackRibbon = document.getElementById('feedback-ribbon');
+    if (feedbackRibbon) {
+      feedbackRibbon.innerHTML = '';
+    }
+
+    // Reset flowers in Group 1 and Group 2
+    ['flower-group-1', 'flower-group-2'].forEach(id => {
       const boxEl = document.getElementById(id);
       if (boxEl) {
         boxEl.classList.remove('counting-active', 'box-completed', 'box-attention');
@@ -1068,6 +1364,13 @@
       }
     });
 
+    // Remove all flowers from Combined Total box (completely blank initial state)
+    const resultBox = document.getElementById('flower-group-result');
+    if (resultBox) {
+      resultBox.innerHTML = '';
+      resultBox.classList.remove('counting-active', 'box-completed', 'box-attention');
+    }
+
     audio.playPop(1);
   }
 
@@ -1075,30 +1378,24 @@
     resetRoundCounting();
   }
 
-  let combinedCountTimer = null;
-
-  function checkCombinedFlowersCounted() {
-    const uncountedResult = document.querySelectorAll('#flower-group-result .flower-token[data-counted="false"]');
-    if (uncountedResult.length === 0 && !state.isAnswered) {
-      const q = state.currentQuestion;
-      if (combinedCountTimer) {
-        clearTimeout(combinedCountTimer);
-      }
-      combinedCountTimer = setTimeout(() => {
-        if (!state.isAnswered) {
-          teacherVoice.guideEquation(q.num1, q.num2, q.answer);
-        }
-      }, 450);
-    }
-  }
-
   // Reveal all question flowers upon hint or correct answer
   // Ensures any uncounted flowers are filled with remaining valid numbers 1..N
   function revealAllQuestionFlowers() {
+    const q = state.currentQuestion;
+    if (!q) return;
+
+    // Ensure result box has all q.answer flowers spawned
+    const resultBox = document.getElementById('flower-group-result');
+    if (resultBox) {
+      while (resultBox.children.length < q.answer) {
+        spawnUnnumberedTotalFlower();
+      }
+    }
+
     const boxes = [
-      { id: 'flower-group-1', total: state.currentQuestion.num1 },
-      { id: 'flower-group-2', total: state.currentQuestion.num2 },
-      { id: 'flower-group-result', total: state.currentQuestion.answer }
+      { id: 'flower-group-1', total: q.num1 },
+      { id: 'flower-group-2', total: q.num2 },
+      { id: 'flower-group-result', total: q.answer }
     ];
 
     let delayIndex = 0;
@@ -1154,14 +1451,9 @@
   // ANSWER SELECTION & VERIFICATION
   // =========================================================================
   function handleAnswerSelect(selectedVal, btnElement, event) {
-    if (state.isAnswered) return;
+    if (state.isAnswered || !state.isAnswerSelectionEnabled) return;
 
     stopCountingHint();
-
-    if (combinedCountTimer) {
-      clearTimeout(combinedCountTimer);
-      combinedCountTimer = null;
-    }
 
     audio.init();
 
@@ -1265,112 +1557,203 @@
 
   // =========================================================================
   // VISUAL EQUATION COUNTING HINT ("Count with Me")
-  // Walks sequentially through Group 1, Group 2, and the Combined Result.
-  // Adds a gentle, noticeable glow to equation symbols:
-  // - Highlights + after Group 1 finishes
-  // - Keeps + glowing while Group 2 counts
-  // - Highlights = after Group 2 finishes (turning off +)
-  // - Keeps = glowing while Combined Total counts
-  // - Resets both symbols when sequence completes, restarts, or new round begins
+  // Walks sequentially through:
+  // Count First Group (auto-spawns total flowers) -> Plus Glows ->
+  // Count Second Group (auto-spawns total flowers) -> Equals Glows ->
+  // Count Total Flowers (reveals 1..N in yellow centers) -> Spoken Total Announcement ->
+  // Enable Answer Buttons!
   // =========================================================================
   function triggerCountingHint() {
     if (state.isCountingHintActive || state.isAnswered) return;
     stopCountingHint();
-    state.isCountingHintActive = true;
 
+    // Start with a clean slate for the guided counting sequence
+    resetRoundCounting();
+
+    state.isCountingHintActive = true;
     audio.init();
 
-    const g1Flowers = Array.from(document.querySelectorAll('#flower-group-1 .flower-token'));
-    const g2Flowers = Array.from(document.querySelectorAll('#flower-group-2 .flower-token'));
-    const resFlowers = Array.from(document.querySelectorAll('#flower-group-result .flower-token'));
+    const q = state.currentQuestion;
+    const box1El = document.getElementById('flower-group-1');
+    const box2El = document.getElementById('flower-group-2');
+    const g1Flowers = box1El ? Array.from(box1El.querySelectorAll('.flower-token')) : [];
+    const g2Flowers = box2El ? Array.from(box2El.querySelectorAll('.flower-token')) : [];
     const plusElem = document.querySelector('.math-plus-symbol');
     const equalsElem = document.querySelector('.math-equals-symbol');
 
-    // Sequence of steps:
-    // 1. Group 1 flowers (count 1..num1)
-    // 2. Plus sign (First group complete -> highlight + with soft glow)
-    // 3. Group 2 flowers (count 1..num2, keeping + glowing)
-    // 4. Equals sign (Second group complete -> switch glow to =)
-    // 5. Combined flowers (count 1..answer, keeping = glowing)
-    const sequence = [];
-    g1Flowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, group: 'g1' }));
-    
-    if (plusElem) sequence.push({ elem: plusElem, type: 'operator', symbol: 'plus' });
+    // Build the sequential steps:
+    const steps = [];
 
-    g2Flowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, group: 'g2' }));
+    // 1. Group 1 flowers (count 1..num1) -> auto-spawns unnumbered flowers in Combined Total
+    g1Flowers.forEach((f, i) => {
+      steps.push({ action: 'flower-g1', elem: f, count: i + 1 });
+    });
 
-    if (equalsElem) sequence.push({ elem: equalsElem, type: 'operator', symbol: 'equals' });
+    // 2. Plus sign glow after Group 1 finishes
+    steps.push({ action: 'plus-operator' });
 
-    resFlowers.forEach((f, i) => sequence.push({ elem: f, type: 'flower', count: i + 1, group: 'res' }));
+    // 3. Group 2 flowers (count 1..num2) -> auto-spawns unnumbered flowers in Combined Total
+    g2Flowers.forEach((f, i) => {
+      steps.push({ action: 'flower-g2', elem: f, count: i + 1 });
+    });
+
+    // 4. Group 2 finishes -> plus turns off, equals glows, all flowers now in Combined Total unnumbered!
+    steps.push({ action: 'equals-transition' });
+
+    // 5. Total flowers manual count (count 1..answer, reveals digits in centers)
+    for (let i = 1; i <= q.answer; i++) {
+      steps.push({ action: 'flower-result', count: i });
+    }
+
+    // 6. Complete total counting -> equals turns off, voice announcement plays, answer buttons unlock
+    steps.push({ action: 'complete-total' });
 
     let stepIndex = 0;
     state.hintInterval = setInterval(() => {
-      // Clear previous flower highlights (symbols retain glow according to sequence phase)
+      // Clear previous flower highlights
       document.querySelectorAll('.flower-token.highlighted').forEach(el => {
         el.classList.remove('highlighted');
       });
 
-      if (stepIndex < sequence.length) {
-        const item = sequence[stepIndex];
+      if (stepIndex < steps.length) {
+        const step = steps[stepIndex];
 
-        if (item.type === 'operator') {
-          if (item.symbol === 'plus') {
-            // First Group completed: Highlight + with a soft, noticeable glow
-            if (plusElem) {
-              plusElem.classList.add('symbol-glow');
-            }
-            audio.playPop(1);
-            teacherVoice.speak("Plus!");
-          } else if (item.symbol === 'equals') {
-            // Second Group completed: Keep + glowing until this step, then switch to =
-            if (plusElem) {
-              plusElem.classList.remove('symbol-glow');
-            }
-            if (equalsElem) {
-              equalsElem.classList.add('symbol-glow');
-            }
-            audio.playPop(1);
-            teacherVoice.speak("Equals!");
-          }
-        } else if (item.type === 'flower') {
-          item.elem.classList.add('highlighted');
+        if (step.action === 'flower-g1') {
+          step.elem.classList.add('highlighted');
+          step.elem.dataset.counted = 'true';
+          step.elem.dataset.countOrder = String(step.count);
+          step.elem.classList.remove('uncounted');
+          step.elem.classList.add('counted');
 
-          // Reveal digit
-          const textElem = item.elem.querySelector('.flower-digit-text');
+          const textElem = step.elem.querySelector('.flower-digit-text');
           if (textElem) {
-            if (!item.elem.dataset.countOrder) {
-              textElem.textContent = item.count;
-              item.elem.dataset.countOrder = String(item.count);
-            }
+            textElem.textContent = step.count;
             textElem.classList.remove('hidden-digit');
             textElem.classList.add('revealed');
           }
-          item.elem.dataset.counted = 'true';
-          item.elem.classList.remove('uncounted');
-          item.elem.classList.add('counted');
 
-          audio.playPop(item.count);
-          teacherVoice.countFlower(item.count);
+          state.boxCounters['flower-group-1'] = step.count;
+          audio.playPop(step.count);
+          teacherVoice.countFlower(step.count);
+
+          // Auto-spawn corresponding unnumbered flower in Combined Total box
+          spawnUnnumberedTotalFlower();
+
+        } else if (step.action === 'plus-operator') {
+          if (box1El) {
+            box1El.classList.remove('counting-active');
+            box1El.classList.add('box-completed');
+          }
+          if (plusElem) {
+            plusElem.classList.add('symbol-glow');
+          }
+          state.currentStage = 'group2';
+          audio.playPop(1);
+          teacherVoice.speak("Plus!");
+
+        } else if (step.action === 'flower-g2') {
+          step.elem.classList.add('highlighted');
+          step.elem.dataset.counted = 'true';
+          step.elem.dataset.countOrder = String(step.count);
+          step.elem.classList.remove('uncounted');
+          step.elem.classList.add('counted');
+
+          const textElem = step.elem.querySelector('.flower-digit-text');
+          if (textElem) {
+            textElem.textContent = step.count;
+            textElem.classList.remove('hidden-digit');
+            textElem.classList.add('revealed');
+          }
+
+          state.boxCounters['flower-group-2'] = step.count;
+          audio.playPop(step.count);
+          teacherVoice.countFlower(step.count);
+
+          // Auto-spawn corresponding unnumbered flower in Combined Total box
+          spawnUnnumberedTotalFlower();
+
+        } else if (step.action === 'equals-transition') {
+          if (box2El) {
+            box2El.classList.remove('counting-active');
+            box2El.classList.add('box-completed');
+          }
+          if (plusElem) {
+            plusElem.classList.remove('symbol-glow');
+          }
+          if (equalsElem) {
+            equalsElem.classList.add('symbol-glow');
+          }
+          state.currentStage = 'counting_total';
+          audio.playPop(1);
+          teacherVoice.speak("Equals!");
+
+          const resBox = document.getElementById('flower-group-result');
+          if (resBox) {
+            resBox.classList.add('counting-active');
+          }
+
+        } else if (step.action === 'flower-result') {
+          const resBox = document.getElementById('flower-group-result');
+          const resFlowers = resBox ? Array.from(resBox.querySelectorAll('.flower-token')) : [];
+          const flowerEl = resFlowers[step.count - 1];
+
+          if (flowerEl) {
+            flowerEl.classList.add('highlighted');
+            flowerEl.dataset.counted = 'true';
+            flowerEl.dataset.countOrder = String(step.count);
+            flowerEl.classList.remove('uncounted');
+            flowerEl.classList.add('counted');
+
+            const textElem = flowerEl.querySelector('.flower-digit-text');
+            if (textElem) {
+              textElem.textContent = step.count;
+              textElem.classList.remove('hidden-digit');
+              textElem.classList.add('revealed');
+            }
+
+            flowerEl.classList.remove('tapped');
+            void flowerEl.offsetWidth;
+            flowerEl.classList.add('tapped');
+          }
+
+          state.boxCounters['flower-group-result'] = step.count;
+          audio.playPop(step.count);
+          teacherVoice.countFlower(step.count);
+
+        } else if (step.action === 'complete-total') {
+          stopCountingHint();
+
+          const resBox = document.getElementById('flower-group-result');
+          if (resBox) {
+            resBox.classList.remove('counting-active');
+            resBox.classList.add('box-completed');
+          }
+
+          const equalsElem = document.querySelector('.math-equals-symbol');
+          if (equalsElem) {
+            equalsElem.classList.remove('symbol-glow');
+          }
+
+          state.currentStage = 'total_announced';
+          state.hasAnnouncedTotal = true;
+
+          triggerTotalAnnouncement(() => {
+            // Highlight matching answer button gently to invite selection
+            const answerBtns = document.querySelectorAll('.flower-answer-buttons .flower-btn');
+            answerBtns.forEach(btn => {
+              if (parseInt(btn.dataset.value, 10) === q.answer) {
+                btn.style.filter = 'drop-shadow(0 0 20px rgba(245, 158, 11, 0.95))';
+                setTimeout(() => {
+                  btn.style.filter = '';
+                }, 3500);
+              }
+            });
+          });
         }
 
         stepIndex++;
       } else {
-        // Sequence completed: clean up interval, highlights, and reset symbol glows
         stopCountingHint();
-
-        const total = state.currentQuestion.answer;
-        teacherVoice.guideEquation(state.currentQuestion.num1, state.currentQuestion.num2, total);
-
-        // Highlight matching answer button gently
-        const answerBtns = document.querySelectorAll('.flower-answer-buttons .flower-btn');
-        answerBtns.forEach(btn => {
-          if (parseInt(btn.dataset.value, 10) === total) {
-            btn.style.filter = 'drop-shadow(0 0 20px rgba(245, 158, 11, 0.95))';
-            setTimeout(() => {
-              btn.style.filter = '';
-            }, 3500);
-          }
-        });
       }
     }, 720);
   }
@@ -1511,6 +1894,19 @@
         e.preventDefault();
         e.stopPropagation();
         resetRoundCounting();
+      });
+    }
+
+    // Combined Total Box: Flowers appear automatically during Group 1 & 2 counting.
+    // In Stage Three, child counts by tapping each revealed flower directly.
+    // Child never has to tap the blank box to spawn flowers.
+    const combinedTotalBox = document.getElementById('flower-group-result');
+    if (combinedTotalBox) {
+      combinedTotalBox.addEventListener('click', (e) => {
+        const clickedFlower = e.target.closest('.flower-token');
+        if (clickedFlower && clickedFlower.parentElement === combinedTotalBox) {
+          handleCombinedFlowerTap(clickedFlower);
+        }
       });
     }
 

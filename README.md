@@ -19,20 +19,49 @@ Follows the authentic **Tenali math curriculum visual design system** with a war
 
 ## 🌸 How the Activity Works
 
-1. **Counting the First Group**:
-   - The child taps the flowers inside the **First Group** box.
-   - Any flower can be tapped first as **1**. Each subsequent blossom receives the next consecutive number (**2, 3...**) based on selection order.
-   - Counting remains restricted to the active box until completed or reset.
-2. **Counting the Second Group**:
-   - Once the first box is complete, the child moves to the **Second Group** box.
-   - The counting sequence restarts independently at **1**, allowing any flower in the second group to be chosen first.
-3. **Counting the Combined Total**:
-   - The child taps the flowers in the **Combined Total** box, which always displays exactly the sum of the first two groups.
-   - Counting begins at **1** and proceeds to the final sum in whichever order the child taps.
-4. **Selecting the Correct Answer**:
-   - Three flower-shaped answer buttons appear below the equation, with numerals displayed directly inside their yellow centers.
-   - The child taps the flower with the correct total to solve the equation ($2 + 2 = 4$).
-   - A correct selection triggers fanfare chords, confetti bursts, encouraging teacher narration, and an earned gold star.
+The activity follows a structured concrete-to-representational learning sequence across clear stages:
+
+$$\text{Count First Group} \longrightarrow \text{Count Second Group} \longrightarrow \text{Auto-Reveal Total Flowers} \longrightarrow \text{Count Total Flowers} \longrightarrow \text{Select Correct Answer}$$
+
+1. **Stage One — Count the First Group & Second Group**:
+   - The Combined Total box starts **completely empty**.
+   - The child counts flowers in the **First Group** box by tapping each blossom. Any flower can be tapped first as **1**, with subsequent blossoms numbered **2, 3...** in touch order.
+   - Counting is restricted to the active box until completed.
+   - When the First Group is complete, the **plus ($+$) sign activates a soft, noticeable glow**.
+   - The child then counts the **Second Group** box, restarting independently from **1**.
+   - When the Second Group is complete, the plus glow turns off and the **equals ($=$) sign activates a gentle glow**.
+
+2. **Stage Two — Automatically Reveal Combined Total Flowers**:
+   - The child **never has to tap the blank Combined Total box** to make flowers appear.
+   - As the child counts flowers in either First Group or Second Group:
+     - Each valid counting tap in the First Group reveals exactly one corresponding flower in the Combined Total box on the right.
+     - Each valid counting tap in the Second Group reveals another corresponding flower in the Combined Total box on the right.
+     - Previously revealed flowers stay visible. The number of visible flowers in the Combined Total box always matches the cumulative number of flowers counted across both groups.
+     - These newly revealed flowers initially appear **unnumbered (blank sunny yellow center)**.
+
+3. **Stage Three — Count the Combined Total Flowers**:
+   - Once both First Group and Second Group are fully counted, independent counting of the Combined Total flowers unlocks.
+   - The child taps each revealed flower in the Combined Total box individually:
+     - Counting starts from **1**.
+     - Each valid tap reveals the counting number (**1, 2, 3...**) inside that flower's sunny yellow center.
+     - The child can tap the revealed flowers in any order; numbers are assigned according to the child's tap order (not physical position).
+     - Each flower can be counted only once. Tapping an already-counted flower provides gentle tactile bounce feedback without changing the count or the assigned number.
+
+4. **Stage Four — Voice Announcement & Answer Selection**:
+   - After all Combined Total flowers have been counted, the equals sign glow turns off.
+   - The teacher voice announces warmly: *“We have [total] flowers in total.”*
+   - Answer option buttons remain disabled until the voice message completes, preventing accidental early tapping.
+   - Once the announcement completes, the three flower-shaped answer buttons unlock with an animated pop.
+   - The child selects the correct flower answer.
+   - A correct selection triggers arpeggio fanfare, confetti bursts, encouraging teacher narration (*"Excellent! [num1] plus [num2] is [total]. Good job!"*), and an earned gold star.
+
+5. **Count Again & Round Resets**:
+   - Clicking the top-right **“↻ Count Again”** button resets the current round without losing level progress or score:
+     - Combined Total box returns to completely empty.
+     - Counters in all boxes reset to 0.
+     - All flowers in Group 1 and Group 2 become uncounted with hidden numbers.
+     - Equation symbol glows turn off and answer buttons re-lock.
+     - The child can count from scratch.
 
 ---
 

@@ -949,6 +949,47 @@ body {
   40%, 80% { transform: translateX(8px) rotate(4deg); }
 }
 
+/* Disabled Flower Answer Buttons - Locked until counting sequence completes */
+.flower-btn:disabled,
+.flower-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08)) grayscale(20%);
+  transform: none !important;
+}
+
+/* Cheerful Unlock Animation when total flowers counting is complete */
+.flower-btn.unlocked {
+  animation: answer-btn-unlock 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes answer-btn-unlock {
+  0% { transform: scale(0.92); opacity: 0.45; }
+  60% { transform: scale(1.12) translateY(-2px); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Combined Total Flowers Blossom Pop-in */
+.flower-token.revealing {
+  animation: flower-reveal-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+@keyframes flower-reveal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.25) rotate(-12deg);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.14) rotate(4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
 /* ==========================================================================
    INTERACTIVE FEEDBACK BANNER & NEXT BUTTON
    ========================================================================== */
