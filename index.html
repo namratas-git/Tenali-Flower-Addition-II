@@ -90,15 +90,36 @@
         </div>
       </div>
 
-      <!-- Hero Mascot Banner -->
+      <!-- Website Header — Brown Area -->
       <div class="tenali-hero-banner">
-        <!-- Exact Tenali Mascot Illustration -->
-        <img src="tenali_mascot.png" class="tenali-mascot-img" alt="Tenali scholar mascot" width="70" height="102">
+        <div class="tenali-hero-brand-group">
+          <!-- Exact Tenali Mascot Illustration -->
+          <img src="tenali_mascot.png" class="tenali-mascot-img" alt="Tenali scholar mascot" width="70" height="102">
 
-        <div class="tenali-hero-text">
-          <h1>Tenali Puzzles & Games</h1>
-          <p>Explore 90+ algorithmically generated math and reasoning games</p>
+          <div class="tenali-hero-text">
+            <h1>Tenali Puzzles &amp; Games</h1>
+            <p>Explore 90+ algorithmically generated math and reasoning games</p>
+          </div>
         </div>
+
+        <!-- Activities Dropdown on the Right Side -->
+        <div class="activities-dropdown-wrapper" id="activities-dropdown-wrapper">
+          <button type="button" class="activities-dropdown-btn" id="activities-dropdown-btn" aria-haspopup="true" aria-expanded="false" aria-controls="activities-dropdown-menu" aria-label="Select Activity">
+            <span class="activities-btn-text">Activities</span>
+            <span class="activities-chevron" aria-hidden="true">▼</span>
+          </button>
+          <div class="activities-dropdown-menu" id="activities-dropdown-menu" role="menu" aria-label="Activities">
+            <button type="button" class="activity-dropdown-item active" id="activity-1-item" role="menuitem" data-activity="1">
+              <span class="activity-item-icon">🌸</span>
+              <span class="activity-item-title">Activity 1</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity 1 Label immediately above the game container, aligned towards the left side -->
+      <div class="activity-section-header">
+        <h2 class="activity-section-title">Activity 1</h2>
       </div>
 
       <!-- ===================================================================
@@ -108,7 +129,7 @@
            Features visual representation:
            [Group 1] + [Group 2] = [Combined Group]
            =================================================================== -->
-      <section class="flower-activity-card" aria-label="Flower Addition II Activity">
+      <section class="flower-activity-card" id="flower-activity-container" aria-label="Flower Addition II Activity">
         
         <!-- Single "Count Again" Button in Top-Right Corner of Activity Area -->
         <button type="button" class="activity-count-again-btn" id="btn-count-again" title="Start counting this round again" aria-label="Count this round again">

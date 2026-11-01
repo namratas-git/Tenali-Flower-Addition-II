@@ -1887,6 +1887,58 @@
       countHintBtn.addEventListener('click', triggerCountingHint);
     }
 
+    // Activities Dropdown Controller in Brown Website Header
+    const activitiesDropdownWrapper = document.getElementById('activities-dropdown-wrapper');
+    const activitiesDropdownBtn = document.getElementById('activities-dropdown-btn');
+    const activity1Item = document.getElementById('activity-1-item');
+    const flowerActivityContainer = document.getElementById('flower-activity-container');
+
+    if (activitiesDropdownBtn && activitiesDropdownWrapper) {
+      const toggleDropdown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = activitiesDropdownWrapper.classList.toggle('open');
+        activitiesDropdownBtn.setAttribute('aria-expanded', String(isOpen));
+      };
+
+      const closeDropdown = () => {
+        if (activitiesDropdownWrapper.classList.contains('open')) {
+          activitiesDropdownWrapper.classList.remove('open');
+          activitiesDropdownBtn.setAttribute('aria-expanded', 'false');
+        }
+      };
+
+      activitiesDropdownBtn.addEventListener('click', toggleDropdown);
+
+      // Close dropdown when tapping anywhere outside
+      document.addEventListener('click', (e) => {
+        if (!activitiesDropdownWrapper.contains(e.target)) {
+          closeDropdown();
+        }
+      });
+
+      // Close dropdown on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeDropdown();
+        }
+      });
+
+      // Selecting Activity 1 from dropdown opens/displays Flower Addition II game
+      if (activity1Item) {
+        activity1Item.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          closeDropdown();
+
+          if (flowerActivityContainer) {
+            flowerActivityContainer.style.display = '';
+            flowerActivityContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      }
+    }
+
     // Single "Count Again" Button in Top-Right Corner of Activity Area
     const countAgainBtn = document.getElementById('btn-count-again');
     if (countAgainBtn) {
