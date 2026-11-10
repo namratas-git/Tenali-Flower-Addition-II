@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Fredoka:wght@400;600;700&family=Nunito:wght@700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles.css?v=2.2">
+  <link rel="stylesheet" href="styles.css?v=2.6">
 </head>
 <body>
 
@@ -113,13 +113,21 @@
               <span class="activity-item-icon">🌸</span>
               <span class="activity-item-title">Activity 1</span>
             </button>
+            <button type="button" class="activity-dropdown-item" id="activity-2-item" role="menuitem" data-activity="2">
+              <span class="activity-item-icon">🌼</span>
+              <span class="activity-item-title">Activity 2</span>
+            </button>
+            <button type="button" class="activity-dropdown-item" id="activity-3-item" role="menuitem" data-activity="3">
+              <span class="activity-item-icon">🌺</span>
+              <span class="activity-item-title">Activity 3</span>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Activity 1 Label immediately above the game container, aligned towards the left side -->
+      <!-- Activity Label immediately above the game container, aligned towards the left side -->
       <div class="activity-section-header">
-        <h2 class="activity-section-title">Activity 1</h2>
+        <h2 class="activity-section-title" id="activity-section-title">Activity 1</h2>
       </div>
 
       <!-- ===================================================================
@@ -213,6 +221,176 @@
         <!-- Activity Helpers Toolbar -->
         <div class="activity-helpers-bar">
           <button id="btn-count-hint" class="helper-action-btn" title="Light up flowers one by one across the equation">
+            💡 Count with Me
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================
+           ACTIVITY 2: FLOWER MERGE ADDITION CARD
+           Visual Addition by Merging:
+           [Flower with num1 petals] + [Flower with num2 petals] = [Answer Box]
+           After counting, individual flowers gently glide and merge into 1 Grand Flower!
+           =================================================================== -->
+      <section class="flower-activity-card flower-merge-activity-card" id="flower-merge-activity-container" aria-label="Flower Merge Addition Activity" style="display: none;">
+        
+        <!-- Top Controls: Question Speaker on Left & Count Again on Right -->
+        <div class="merge-top-bar">
+          <button id="merge-audio-speak-btn" class="audio-speak-btn" title="Tap speaker to hear question" aria-label="Listen to Question">
+            🔊
+          </button>
+          <button type="button" class="activity-count-again-btn" id="btn-merge-count-again" title="Start counting this round again" aria-label="Count this round again">
+            <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
+              <path d="M2 3v6h6"/>
+            </svg>
+            <span>Count Again</span>
+          </button>
+        </div>
+
+        <!-- ===============================================================
+             VISUAL ADDITION EQUATION:
+             [First Flower] + [Second Flower] = [Merged Answer Box]
+             =============================================================== -->
+        <div class="flower-equation-wrapper merge-equation-wrapper" id="merge-flower-equation-wrapper">
+          
+          <!-- First Flower Container (First Addend) -->
+          <div class="flower-group-container merge-group-container" id="merge-container-1">
+            <div class="group-header-tag">First Group</div>
+            <div class="flower-group-box merge-flower-host" id="merge-flower-1-box" title="Tap the first flower to reveal flowers in the Answer Box!">
+              <!-- Injected by activity2.js: Flower with addend num1 in center -->
+            </div>
+          </div>
+
+          <!-- Chunky Orange Plus Sign -->
+          <div class="math-operator-symbol math-plus-symbol" id="merge-plus-symbol" aria-hidden="true">+</div>
+
+          <!-- Second Flower Container (Second Addend) -->
+          <div class="flower-group-container merge-group-container" id="merge-container-2">
+            <div class="group-header-tag">Second Group</div>
+            <div class="flower-group-box merge-flower-host" id="merge-flower-2-box" title="Tap the second flower to reveal flowers in the Answer Box!">
+              <!-- Injected by activity2.js: Flower with addend num2 in center -->
+            </div>
+          </div>
+
+          <!-- Chunky Orange Equals Sign -->
+          <div class="math-operator-symbol math-equals-symbol" id="merge-equals-symbol" aria-hidden="true">=</div>
+
+          <!-- Answer Box Container (Starts Empty, Populates one-by-one, then Merges!) -->
+          <div class="flower-group-container flower-result-container merge-result-container" id="merge-container-result">
+            <div class="group-header-tag result-tag" id="merge-result-tag">Answer Box</div>
+            <div class="flower-group-box flower-combined-group-box merge-answer-box" id="merge-answer-box" title="Watch flowers appear, count them, and see them merge!">
+              <!-- Injected by activity2.js: individual flowers appear, child counts, then they merge into one grand flower! -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Answer Section with Three Flower-Shaped Buttons -->
+        <div class="answer-stage-container" id="merge-answer-stage-container">
+          <div class="answer-prompt-text" id="merge-answer-prompt-text">
+            👉 Look at the flowers! Tap the flower showing the total:
+          </div>
+
+          <div class="flower-answer-buttons" id="merge-flower-answer-buttons">
+            <!-- Injected by activity2.js: 3 flower buttons with yellow centres and numbers -->
+          </div>
+        </div>
+
+        <!-- Interactive Cheerful Feedback Ribbon -->
+        <div class="feedback-ribbon" id="merge-feedback-ribbon" aria-live="polite">
+          <!-- Populated when user selects an answer -->
+        </div>
+
+        <!-- Activity Helpers Toolbar -->
+        <div class="activity-helpers-bar">
+          <button id="btn-merge-count-hint" class="helper-action-btn" title="Count with me step by step and watch the flowers merge!">
+            💡 Count with Me
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================
+           ACTIVITY 3: FLOWER MERGE ADDITION CARD (EXACT CLONE OF ACTIVITY 2)
+           Visual Addition by Merging:
+           [Flower with num1 petals] + [Flower with num2 petals] = [Answer Box]
+           After counting, individual flowers gently glide and merge into 1 Grand Flower!
+           =================================================================== -->
+      <section class="flower-activity-card flower-merge-activity-card" id="flower-merge-3-activity-container" aria-label="Activity 3: Flower Merge Addition Activity" style="display: none;">
+        
+        <!-- Top Controls: Question Speaker on Left & Count Again on Right -->
+        <div class="merge-top-bar">
+          <button id="merge-3-audio-speak-btn" class="audio-speak-btn" title="Tap speaker to hear question" aria-label="Listen to Question">
+            🔊
+          </button>
+          <button type="button" class="activity-count-again-btn" id="btn-merge-3-count-again" title="Start counting this round again" aria-label="Count this round again">
+            <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
+              <path d="M2 3v6h6"/>
+            </svg>
+            <span>Count Again</span>
+          </button>
+        </div>
+
+        <!-- ===============================================================
+             VISUAL ADDITION EQUATION:
+             [First Flower] + [Second Flower] = [Merged Answer Box]
+             =============================================================== -->
+        <div class="flower-equation-wrapper merge-equation-wrapper" id="merge-3-flower-equation-wrapper">
+          
+          <!-- First Flower Container (First Addend) -->
+          <div class="flower-group-container merge-group-container" id="merge-3-container-1">
+            <div class="group-header-tag">First Flower</div>
+            <div class="flower-group-box merge-flower-host" id="merge-3-flower-1-box" title="Tap the first flower to reveal flowers in the Answer Box!">
+              <!-- Injected by activity3.js: Flower with addend num1 in center -->
+            </div>
+          </div>
+
+          <!-- Chunky Orange Plus Sign -->
+          <div class="math-operator-symbol math-plus-symbol" id="merge-3-plus-symbol" aria-hidden="true">+</div>
+
+          <!-- Second Flower Container (Second Addend) -->
+          <div class="flower-group-container merge-group-container" id="merge-3-container-2">
+            <div class="group-header-tag">Second Flower</div>
+            <div class="flower-group-box merge-flower-host" id="merge-3-flower-2-box" title="Tap the second flower to reveal flowers in the Answer Box!">
+              <!-- Injected by activity3.js: Flower with addend num2 in center -->
+            </div>
+          </div>
+
+          <!-- Chunky Orange Equals Sign -->
+          <div class="math-operator-symbol math-equals-symbol" id="merge-3-equals-symbol" aria-hidden="true">=</div>
+
+          <!-- Answer Box Container (Starts Empty, Populates one-by-one, then Merges!) -->
+          <div class="flower-group-container flower-result-container merge-result-container" id="merge-3-container-result">
+            <div class="group-header-tag result-tag" id="merge-3-result-tag">Answer Box</div>
+            <div class="flower-group-box flower-combined-group-box merge-answer-box" id="merge-3-answer-box" title="Watch flowers appear, count them, and see them merge!">
+              <!-- Injected by activity3.js: individual flowers appear, child counts, then they merge into one grand flower! -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Answer Section with Three Flower-Shaped Buttons -->
+        <div class="answer-stage-container" id="merge-3-answer-stage-container">
+          <div class="answer-prompt-text" id="merge-3-answer-prompt-text">
+            👉 Look at the flowers! Tap the flower showing the total:
+          </div>
+
+          <div class="flower-answer-buttons" id="merge-3-flower-answer-buttons">
+            <!-- Injected by activity3.js: 3 flower buttons with yellow centres and numbers -->
+          </div>
+        </div>
+
+        <!-- Interactive Cheerful Feedback Ribbon -->
+        <div class="feedback-ribbon" id="merge-3-feedback-ribbon" aria-live="polite">
+          <!-- Populated when user selects an answer -->
+        </div>
+
+        <!-- Activity Helpers Toolbar -->
+        <div class="activity-helpers-bar">
+          <button id="btn-merge-3-count-hint" class="helper-action-btn" title="Count with me step by step and watch the flowers merge!">
             💡 Count with Me
           </button>
         </div>
@@ -352,5 +530,7 @@
   </div>
 
   <script src="game.js?v=2.2"></script>
+  <script src="activity2.js?v=2.6"></script>
+  <script src="activity3.js?v=1.0"></script>
 </body>
 </html>

@@ -469,15 +469,15 @@ body {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 180px;
+  min-width: 145px;
   background: #2a1b14;
   border: 1.5px solid rgba(249, 115, 22, 0.45);
-  border-radius: 14px;
-  padding: 8px;
+  border-radius: 12px;
+  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 22px rgba(249, 115, 22, 0.2);
+  gap: 3px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(249, 115, 22, 0.18);
   z-index: 100;
   opacity: 0;
   visibility: hidden;
@@ -498,31 +498,32 @@ body {
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 10px;
-  color: var(--text-tenali-heading);
+  border-radius: 8px;
+  color: #fff8f0;
   font-family: var(--font-sans);
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 700;
   text-align: left;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   user-select: none;
+  white-space: nowrap;
 }
 
 .activity-dropdown-item:hover {
-  background: rgba(249, 115, 22, 0.18);
+  background: rgba(255, 255, 255, 0.1);
   border-color: rgba(249, 115, 22, 0.35);
-  color: var(--tenali-orange-light);
-  transform: translateX(3px);
+  color: #ffffff;
+  transform: none;
 }
 
 .activity-dropdown-item.active {
   background: rgba(249, 115, 22, 0.22);
   border-color: rgba(249, 115, 22, 0.5);
-  color: #fff8f0;
+  color: #ffffff;
 }
 
 .activity-dropdown-item.active::after {
@@ -531,6 +532,7 @@ body {
   font-size: 13px;
   color: var(--tenali-orange-light);
   font-weight: 900;
+  padding-left: 8px;
 }
 
 .activity-item-icon {
@@ -838,6 +840,21 @@ body {
   animation: box-attention-shake 0.45s ease-in-out;
   border-color: #f97316 !important;
   box-shadow: 0 0 22px rgba(249, 115, 22, 0.45) !important;
+}
+
+/* Count With Me Target Guidance Highlights */
+.flower-group-box.hint-target-glow,
+.flower-answer-buttons.hint-target-glow,
+.next-question-btn.hint-target-glow {
+  animation: box-attention-shake 0.45s ease-in-out;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 24px rgba(249, 115, 22, 0.65) !important;
+}
+
+.flower-token.flower-attention {
+  animation: answer-celebrate 0.7s ease-in-out infinite alternate !important;
+  filter: drop-shadow(0 0 18px rgba(249, 115, 22, 0.95)) !important;
+  transform: scale(1.15) !important;
 }
 
 @keyframes box-attention-shake {
@@ -1270,7 +1287,8 @@ body {
   transform: translateY(-1px);
 }
 
-.helper-action-btn.hint-pulse {
+.helper-action-btn.hint-pulse,
+.helper-action-btn.hint-active {
   animation: glow-hint 1.8s infinite;
   border-color: #f59e0b;
   background-color: #fffbeb;
@@ -1808,5 +1826,478 @@ body {
 
   .star-slot {
     font-size: 18px;
+  }
+}
+
+/* ==========================================================================
+   ACTIVITY 2: FLOWER MERGE ADDITION STYLES
+   Visual Addition by Merging:
+   [Flower with num1 petals] + [Flower with num2 petals] = [Answer Box]
+   Smooth glide & merge animation into one Grand Merged Flower!
+   ========================================================================== */
+
+.flower-merge-activity-card {
+  /* Inherits .flower-activity-card styles */
+}
+
+/* Top bar with question speaker & count again */
+.merge-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+/* Containers in equation */
+.merge-group-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 130px;
+  cursor: pointer;
+}
+
+.merge-result-container {
+  flex: 1.4 1 0;
+  min-width: 170px;
+}
+
+.merge-flower-host {
+  width: 100%;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  position: relative;
+  background-color: var(--activity-green-container-bg);
+  border: 2.5px dashed var(--activity-green-container-border-dash);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#flower-merge-activity-container .merge-flower-host {
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 8px;
+  padding: 12px 10px;
+}
+
+#flower-merge-activity-container .addend-flower-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#flower-merge-activity-container .addend-flower-token:hover {
+  transform: scale(1.08);
+}
+
+#flower-merge-activity-container .addend-flower-token:active {
+  transform: scale(0.95);
+}
+
+#flower-merge-activity-container .merge-flower-host.tapped .addend-flower-token {
+  animation: flower-bounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.merge-flower-host:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(147, 51, 234, 0.16), inset 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.merge-flower-host.box-completed {
+  border-style: solid;
+  border-color: #22c55e;
+  background-color: #f0fdf4;
+}
+
+.merge-flower-host.tapped {
+  animation: flower-host-bounce 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes flower-host-bounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08) translateY(-4px); }
+  100% { transform: scale(1); }
+}
+
+.merge-flower-svg {
+  width: 135px;
+  height: 135px;
+  max-width: 100%;
+  max-height: 100%;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+  overflow: visible;
+  transition: transform 0.25s ease;
+}
+
+.merge-center-digit {
+  user-select: none;
+}
+
+/* Answer Box */
+.merge-answer-box {
+  width: 100%;
+  min-height: 160px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  position: relative;
+  overflow: visible;
+  background-color: #fffdf5;
+  border: 2.5px dashed #f59e0b;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 2px 6px rgba(245, 158, 11, 0.06);
+  transition: all 0.3s ease;
+}
+
+.merge-answer-box.counting-active {
+  background-color: #fefce8;
+  border-color: #ea580c;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.3), inset 0 2px 6px rgba(249, 115, 22, 0.08);
+}
+
+/* ==========================================================================
+   Activity 2 - Special requirement for white flowers:
+   Warm yellow / soft golden-yellow container backgrounds so white petals never blend
+   ========================================================================== */
+#flower-merge-activity-container.white-flower-theme .merge-flower-host,
+#flower-merge-activity-container.white-flower-theme .merge-answer-box {
+  background-color: #fef3c7 !important; /* soft golden-yellow background */
+  border-color: #f59e0b !important;
+}
+
+#flower-merge-activity-container.white-flower-theme .merge-flower-host:hover {
+  background-color: #fde68a !important;
+  border-color: #d97706 !important;
+}
+
+#flower-merge-activity-container.white-flower-theme .merge-flower-host.box-completed {
+  background-color: #fef3c7 !important;
+  border-color: #f59e0b !important;
+}
+
+#flower-merge-activity-container.white-flower-theme .merge-answer-box.counting-active {
+  background-color: #fef08a !important;
+  border-color: #ea580c !important;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.35), inset 0 2px 6px rgba(245, 158, 11, 0.1) !important;
+}
+
+#flower-merge-activity-container.white-flower-theme .merge-answer-box.box-completed {
+  background-color: #fef3c7 !important;
+  border-color: #f59e0b !important;
+}
+
+/* White flowers in Activity 2: Warm golden-yellow petal outline */
+#flower-merge-activity-container.white-flower-theme .flower-petal-lobe,
+#flower-merge-activity-container.white-flower-theme .answer-flower-petal {
+  stroke: #f59e0b !important;
+}
+
+/* Spawn animation for revealed individual flowers in Answer Box */
+.merge-answer-box .flower-token.spawn-reveal {
+  animation: merge-flower-spawn-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes merge-flower-spawn-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Grand Merged Flower */
+.grand-merged-flower {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 116px;
+  height: 116px;
+  animation: grand-flower-emerge 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, grand-flower-glow 2.5s ease-in-out infinite alternate 0.65s;
+  z-index: 5;
+  position: relative;
+}
+
+@keyframes grand-flower-emerge {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  75% {
+    transform: scale(1.2) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes grand-flower-glow {
+  0% {
+    filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.65));
+  }
+  100% {
+    filter: drop-shadow(0 0 26px rgba(249, 115, 22, 0.95)) drop-shadow(0 0 8px rgba(255, 213, 79, 0.8));
+  }
+}
+
+.grand-flower-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Responsive wrap */
+@media (max-width: 680px) {
+  .merge-flower-svg {
+    width: 112px;
+    height: 112px;
+  }
+
+  .merge-flower-host {
+    min-height: 130px;
+  }
+
+  #flower-merge-activity-container .merge-flower-host {
+    gap: 6px;
+    padding: 8px 6px;
+  }
+
+  #flower-merge-activity-container .addend-flower-token {
+    width: 58px;
+    height: 58px;
+  }
+
+  #flower-merge-activity-container .addend-flower-token.size-lg {
+    width: 64px;
+    height: 64px;
+  }
+
+  #flower-merge-activity-container .addend-flower-token.size-sm {
+    width: 46px;
+    height: 46px;
+  }
+
+  .merge-answer-box {
+    min-height: 130px;
+    gap: 6px;
+  }
+
+  .grand-merged-flower {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+/* ==========================================================================
+   Activity 2 - Multiple-Choice Answer Option Flowers
+   Light Sky-Blue Cartoon Design (15-20% smaller than Activity 1, ~86px)
+   ========================================================================== */
+#merge-flower-answer-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  margin: 14px 0 8px;
+}
+
+#merge-flower-answer-buttons .flower-btn {
+  width: 86px;
+  height: 86px;
+  min-width: 86px;
+  min-height: 86px;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.14));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease, opacity 0.35s ease;
+}
+
+#merge-flower-answer-buttons .flower-btn:hover:not(:disabled) {
+  transform: scale(1.10) translateY(-3px);
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.22));
+}
+
+#merge-flower-answer-buttons .flower-btn:active:not(:disabled) {
+  transform: scale(0.96) translateY(2px);
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.16));
+}
+
+#merge-flower-answer-buttons .flower-btn.correct {
+  animation: answer-celebrate 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  filter: drop-shadow(0 0 24px rgba(34, 197, 94, 0.85)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+}
+
+#merge-flower-answer-buttons .flower-btn.incorrect {
+  animation: gentle-wobble 0.5s ease-in-out;
+  filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.7));
+}
+
+#merge-flower-answer-buttons .flower-btn:disabled,
+#merge-flower-answer-buttons .flower-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.2) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08));
+}
+
+.answer-flower-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+}
+
+.answer-flower-petal {
+  stroke-width: 1.8px;
+  transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+}
+
+#merge-flower-answer-buttons .flower-btn:hover:not(:disabled) .answer-flower-petal {
+  filter: brightness(1.08);
+}
+
+.answer-flower-center {
+  stroke-width: 2.5px;
+  transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+}
+
+#merge-flower-answer-buttons .flower-btn:hover:not(:disabled) .answer-flower-center {
+  filter: brightness(1.06);
+}
+
+.answer-flower-digit-text {
+  font-family: 'Fredoka', 'Quicksand', 'Nunito', sans-serif !important;
+  font-size: 25px !important;
+  font-weight: 900 !important;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  #merge-flower-answer-buttons {
+    gap: 20px;
+  }
+  #merge-flower-answer-buttons .flower-btn {
+    width: 76px;
+    height: 76px;
+    min-width: 76px;
+    min-height: 76px;
+  }
+}
+
+@media (max-width: 480px) {
+  #merge-flower-answer-buttons {
+    gap: 16px;
+  }
+  #merge-flower-answer-buttons .flower-btn {
+    width: 68px;
+    height: 68px;
+    min-width: 68px;
+    min-height: 68px;
+  }
+}
+
+/* ==========================================================================
+   Activity 3 - Multiple-Choice Answer Option Flowers (Exact Clone Styling)
+   ========================================================================== */
+#merge-3-flower-answer-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  margin: 14px 0 8px;
+}
+
+#merge-3-flower-answer-buttons .flower-btn {
+  width: 86px;
+  height: 86px;
+  min-width: 86px;
+  min-height: 86px;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.14));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease, opacity 0.35s ease;
+}
+
+#merge-3-flower-answer-buttons .flower-btn:hover:not(:disabled) {
+  transform: scale(1.10) translateY(-3px);
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.22));
+}
+
+#merge-3-flower-answer-buttons .flower-btn:active:not(:disabled) {
+  transform: scale(0.96) translateY(2px);
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.16));
+}
+
+#merge-3-flower-answer-buttons .flower-btn.correct {
+  animation: answer-celebrate 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  filter: drop-shadow(0 0 24px rgba(34, 197, 94, 0.85)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+}
+
+#merge-3-flower-answer-buttons .flower-btn.incorrect {
+  animation: gentle-wobble 0.5s ease-in-out;
+  filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.7));
+}
+
+#merge-3-flower-answer-buttons .flower-btn:disabled,
+#merge-3-flower-answer-buttons .flower-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.2) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08));
+}
+
+#merge-3-flower-answer-buttons .flower-btn:hover:not(:disabled) .answer-flower-petal {
+  filter: brightness(1.08);
+}
+
+#merge-3-flower-answer-buttons .flower-btn:hover:not(:disabled) .answer-flower-center {
+  filter: brightness(1.06);
+}
+
+@media (max-width: 640px) {
+  #merge-3-flower-answer-buttons {
+    gap: 20px;
+  }
+  #merge-3-flower-answer-buttons .flower-btn {
+    width: 76px;
+    height: 76px;
+    min-width: 76px;
+    min-height: 76px;
+  }
+}
+
+@media (max-width: 480px) {
+  #merge-3-flower-answer-buttons {
+    gap: 16px;
+  }
+  #merge-3-flower-answer-buttons .flower-btn {
+    width: 68px;
+    height: 68px;
+    min-width: 68px;
+    min-height: 68px;
   }
 }
