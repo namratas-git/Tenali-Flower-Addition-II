@@ -5783,12 +5783,30 @@ body {
   // =========================================================================
 
   let hintStepTimeout = null;
+  let hintTimeouts = [];
 
-  function stopMergeCountingHint() {
+  function clearHintTimeouts() {
+    hintTimeouts.forEach(t => clearTimeout(t));
+    hintTimeouts = [];
     if (hintStepTimeout) {
       clearTimeout(hintStepTimeout);
       hintStepTimeout = null;
     }
+  }
+
+  function setHintTimeout(fn, delay) {
+    if (!mergeState.isHintActive) return null;
+    const tId = setTimeout(() => {
+      hintTimeouts = hintTimeouts.filter(id => id !== tId);
+      if (!mergeState.isHintActive) return;
+      fn();
+    }, delay);
+    hintTimeouts.push(tId);
+    return tId;
+  }
+
+  function stopMergeCountingHint() {
+    clearHintTimeouts();
     if (mergeState.hintInterval) {
       clearInterval(mergeState.hintInterval);
       mergeState.hintInterval = null;
@@ -6357,9 +6375,10 @@ body {
   window.TenaliRenderMergeQuestion = renderMergeQuestion;
 
   /**
-   * Spawns exactly one unnumbered individual flower into the Answer Box
+   * Spawns exactly one individual flower into the Answer Box.
+   * If countNumber is provided, displays the sequential counting number in the centre.
    */
-  function spawnAnswerBoxFlower() {
+  function spawnAnswerBoxFlower(countNumber = null) {
     const q = mergeState.currentQuestion;
     if (!q) return null;
 
@@ -6381,21 +6400,22 @@ body {
       pixelSize = 62;
     }
 
+    const hasNumber = (countNumber !== undefined && countNumber !== null && countNumber !== '');
     const flowerToken = document.createElement('div');
-    flowerToken.className = `flower-token ${flowerSizeClass} uncounted spawn-reveal`;
+    flowerToken.className = `flower-token ${flowerSizeClass} ${hasNumber ? 'counted' : 'uncounted'} spawn-reveal`;
     flowerToken.dataset.box = 'merge-answer-box';
-    flowerToken.dataset.counted = 'false';
-    flowerToken.dataset.countOrder = '';
+    flowerToken.dataset.counted = hasNumber ? 'true' : 'false';
+    flowerToken.dataset.countOrder = hasNumber ? String(countNumber) : '';
     flowerToken.dataset.index = String(existingCount);
 
     flowerToken.innerHTML = createStandardFlowerSVG({
-      number: '',
+      number: hasNumber ? countNumber : '',
       size: pixelSize,
       petalColor: palette.petal,
       petalDark: palette.petalDark,
       centerColor: palette.center,
       centerBorder: palette.centerBorder,
-      hideNumber: true // unnumbered yellow centre initially
+      hideNumber: !hasNumber // unnumbered yellow centre if no number provided
     });
 
     flowerToken.addEventListener('click', (e) => {
@@ -7010,16 +7030,43 @@ body {
 
   /**
    * Count With Me Tutorial in Activity 2:
-   * Demonstrates the complete addition step by step:
-   * Step 1 – First Flower (num1): Highlight, teacher speaks word ("One." / "Two."), reveals flower(s) in Answer Box.
-   * Step 2 – Second Flower (num2): Highlight, teacher speaks word ("Two." / "One."), reveals flower(s) in Answer Box.
-   * Step 3 – Addition sign (+): Highlight +, teacher says "Plus."
-   * Step 4 – Equals sign (=): Highlight =, teacher says "Equals to."
-   * Step 5 – Count Answer Box: Highlight each individual flower in sequence: "One, two, three." (remains individual)
-   * Step 6 – Merge the flowers: Play existing smooth flower-merging animation into Grand Merged Flower showing total.
-   * Step 7 – Speak the final total: Teacher clearly says the total word (e.g. "Three."), unlocks and highlights matching answer button.
+   * Slow, clear, and perfectly synchronised with the teacher's voice and flower animations.
    *
-   * If child has already completed part of counting, resumes from the appropriate next step without duplicating flowers.
+   * 1. First Group – Speak and Show Flowers:
+   *    - Highlight First Group
+   *    - Teacher speaks addend naturally & clearly (e.g. "Two.")
+   *    - Wait until voice completely finishes speaking (onend callback)
+   *    - Pause 500ms, then reveal individual flowers in Answer Box one at a time (numbered 1, 2, etc.)
+   *    - Pause between flower appearances so child can see each one
+   *
+   * 2. Plus Sign – Addition Instruction:
+   *    - Teacher says "Plus."
+   *    - Highlight plus sign while spoken
+   *    - Wait until voice finishes speaking before proceeding to Second Group
+   *
+   * 3. Second Group – Speak and Show Flowers:
+   *    - Highlight Second Group
+   *    - Teacher speaks second addend naturally & clearly (e.g. "One.")
+   *    - Wait until voice completely finishes speaking (onend callback)
+   *    - Pause 500ms, then reveal individual flowers in Answer Box one at a time,
+   *      continuing sequential counting numbers from First Group (e.g. 3, etc.)
+   *
+   * 4. Count All Flowers Together:
+   *    - Teacher slowly counts entire collection from 1 onwards: "One... Two... Three."
+   *    - Each number spoken separately
+   *    - Highlight corresponding individual flower in Answer Box as its number is spoken
+   *    - Sufficient pause between each spoken number so child can follow
+   *
+   * 5. Merge the Flowers:
+   *    - Only after complete counting sequence has finished, start existing flower-merging animation
+   *    - Flowers glide smoothly together into Grand Merged Flower showing correct total in centre
+   *
+   * 6. Announce the Final Total:
+   *    - After merging animation completely finishes, teacher says: "We have [total] flowers in total."
+   *    - Only after this announcement finishes speaking: conclude tutorial & unlock 3 answer choices
+   *
+   * Dynamic & resilient: If child taps Count With Me after partially revealing flowers,
+   * resumes from the appropriate next step without duplicating flowers or recounting.
    */
   function triggerMergeCountingHint() {
     if (mergeState.isHintActive || mergeState.isAnswered) return;
@@ -7042,6 +7089,11 @@ body {
     const plusElem = document.getElementById('merge-plus-symbol');
     const equalsElem = document.getElementById('merge-equals-symbol');
 
+    // Helper: checks if tutorial is still active before doing anything
+    function checkActive() {
+      return !!mergeState.isHintActive;
+    }
+
     // Check existing progress to avoid duplicate flowers or recounting
     const f1Done = mergeState.flower1Counted || ((mergeState.flower1Taps || 0) >= q.num1);
     const f2Done = mergeState.flower2Counted || ((mergeState.flower2Taps || 0) >= q.num2);
@@ -7049,192 +7101,245 @@ body {
 
     const sequence = [];
 
-    // Step 1: First Flower (if not already completed)
+    // =========================================================================
+    // 1. First Group – Speak and Show Flowers (if not already completed)
+    // =========================================================================
     if (!f1Done) {
       sequence.push({
-        name: 'step1-first-flower',
+        name: 'step1-first-group',
         run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
           if (box1) {
             box1.classList.add('hint-target-glow', 'tapped');
-            setTimeout(() => box1.classList.remove('tapped'), 400);
+            setHintTimeout(() => { if (checkActive() && box1) box1.classList.remove('tapped'); }, 400);
           }
+
+          // Teacher speaks the First Group addend naturally and clearly (e.g. "Two.")
           const w1 = mergeTeacherVoice.getWord(q.num1);
           const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
-          mergeTeacherVoice.speak(cap1 + ".");
-          mergeAudio.playPop(1);
 
-          const needed = q.num1 - (mergeState.flower1Taps || 0);
-          let spawned = 0;
-          function spawnLoop() {
-            if (spawned < needed) {
-              mergeState.flower1Taps = (mergeState.flower1Taps || 0) + 1;
-              const flower = spawnAnswerBoxFlower();
-              if (flower) {
-                flower.classList.add('flower-attention');
-                setTimeout(() => flower.classList.remove('flower-attention'), 500);
+          mergeTeacherVoice.speak(cap1 + ".", () => {
+            if (!checkActive()) return;
+            // Wait until the voice has completely finished speaking, then comfortable pause
+            setHintTimeout(() => {
+              if (!checkActive()) return;
+
+              // Reveal corresponding individual flowers in Answer Box, one at a time
+              let currentCount = mergeState.flower1Taps || 0;
+              const totalToSpawn = q.num1;
+
+              function revealNextFlower() {
+                if (!checkActive()) return;
+                if (currentCount < totalToSpawn) {
+                  currentCount++;
+                  mergeState.flower1Taps = currentCount;
+
+                  const existingCount = ansBox ? ansBox.querySelectorAll('.flower-token').length : 0;
+                  const seqNum = existingCount + 1;
+
+                  const flower = spawnAnswerBoxFlower(seqNum);
+                  if (flower) {
+                    flower.classList.add('flower-attention');
+                    setHintTimeout(() => { if (flower) flower.classList.remove('flower-attention'); }, 500);
+                  }
+                  mergeAudio.playPop(seqNum);
+
+                  if (currentCount < totalToSpawn) {
+                    setHintTimeout(revealNextFlower, 550);
+                    return;
+                  }
+                }
+
+                // Completed First Group
+                mergeState.flower1Counted = true;
+                if (box1) {
+                  box1.classList.remove('hint-target-glow');
+                  box1.classList.add('box-completed');
+                }
+                saveMergeProgress();
+                setHintTimeout(next, 600);
               }
-              mergeAudio.playPop(mergeState.flower1Taps);
-              spawned++;
-              if (spawned < needed) {
-                hintStepTimeout = setTimeout(spawnLoop, 350);
-                return;
-              }
-            }
-            mergeState.flower1Counted = true;
-            if (box1) {
-              box1.classList.remove('hint-target-glow');
-              box1.classList.add('box-completed');
-            }
-            saveMergeProgress();
-            hintStepTimeout = setTimeout(next, 750);
-          }
-          spawnLoop();
+
+              revealNextFlower();
+            }, 500);
+          });
         }
       });
     }
 
-    // Step 2: Second Flower (if not already completed)
-    if (!f2Done) {
+    // =========================================================================
+    // 2. Plus Sign – Addition Instruction
+    // =========================================================================
+    if (!hasMerged && !f2Done) {
       sequence.push({
-        name: 'step2-second-flower',
+        name: 'step2-plus-sign',
         run: (next) => {
-          clearHintHighlights();
-          if (box2) {
-            box2.classList.add('hint-target-glow', 'tapped');
-            setTimeout(() => box2.classList.remove('tapped'), 400);
-          }
-          const w2 = mergeTeacherVoice.getWord(q.num2);
-          const cap2 = w2.charAt(0).toUpperCase() + w2.slice(1);
-          mergeTeacherVoice.speak(cap2 + ".");
-          mergeAudio.playPop(1);
-
-          const needed = q.num2 - (mergeState.flower2Taps || 0);
-          let spawned = 0;
-          function spawnLoop() {
-            if (spawned < needed) {
-              mergeState.flower2Taps = (mergeState.flower2Taps || 0) + 1;
-              const flower = spawnAnswerBoxFlower();
-              if (flower) {
-                flower.classList.add('flower-attention');
-                setTimeout(() => flower.classList.remove('flower-attention'), 500);
-              }
-              mergeAudio.playPop(mergeState.flower2Taps);
-              spawned++;
-              if (spawned < needed) {
-                hintStepTimeout = setTimeout(spawnLoop, 350);
-                return;
-              }
-            }
-            mergeState.flower2Counted = true;
-            if (box2) {
-              box2.classList.remove('hint-target-glow');
-              box2.classList.add('box-completed');
-            }
-            saveMergeProgress();
-            hintStepTimeout = setTimeout(next, 750);
-          }
-          spawnLoop();
-        }
-      });
-    }
-
-    // Step 3: Addition sign (+)
-    if (!hasMerged && (!f1Done || !f2Done || mergeState.stage === 'counting_addends' || mergeState.stage === 'counting_total')) {
-      sequence.push({
-        name: 'step3-plus-sign',
-        run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
           if (plusElem) {
             plusElem.classList.add('symbol-glow', 'highlighted');
           }
           mergeAudio.playPop(1);
-          mergeTeacherVoice.speak("Plus.");
-          hintStepTimeout = setTimeout(() => {
-            if (plusElem) plusElem.classList.remove('highlighted');
-            next();
-          }, 800);
+
+          // Teacher says: "Plus."
+          mergeTeacherVoice.speak("Plus.", () => {
+            if (!checkActive()) return;
+            // Wait until voice has finished speaking before proceeding to Second Group
+            if (plusElem) {
+              plusElem.classList.remove('symbol-glow', 'highlighted');
+            }
+            setHintTimeout(next, 500);
+          });
         }
       });
     }
 
-    // Step 4: Equals sign (=)
-    if (!hasMerged) {
+    // =========================================================================
+    // 3. Second Group – Speak and Show Flowers (if not already completed)
+    // =========================================================================
+    if (!f2Done) {
       sequence.push({
-        name: 'step4-equals-sign',
+        name: 'step3-second-group',
         run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
-          if (plusElem) plusElem.classList.remove('symbol-glow', 'highlighted');
-          if (equalsElem) equalsElem.classList.add('symbol-glow', 'highlighted');
-          mergeAudio.playPop(1);
-          mergeTeacherVoice.speak("Equals to.");
-          hintStepTimeout = setTimeout(() => {
-            next();
-          }, 850);
+          if (box2) {
+            box2.classList.add('hint-target-glow', 'tapped');
+            setHintTimeout(() => { if (checkActive() && box2) box2.classList.remove('tapped'); }, 400);
+          }
+
+          // Teacher speaks the Second Group addend naturally and clearly (e.g. "One.")
+          const w2 = mergeTeacherVoice.getWord(q.num2);
+          const cap2 = w2.charAt(0).toUpperCase() + w2.slice(1);
+
+          mergeTeacherVoice.speak(cap2 + ".", () => {
+            if (!checkActive()) return;
+            // Wait until voice has completely finished speaking, then comfortable pause
+            setHintTimeout(() => {
+              if (!checkActive()) return;
+
+              // Reveal corresponding individual flowers in Answer Box, one at a time,
+              // continuing the sequential counting number from First Group (e.g. 3, etc.)
+              let currentGroupCount = mergeState.flower2Taps || 0;
+              const totalToSpawn = q.num2;
+
+              function revealNextFlower() {
+                if (!checkActive()) return;
+                if (currentGroupCount < totalToSpawn) {
+                  currentGroupCount++;
+                  mergeState.flower2Taps = currentGroupCount;
+
+                  const existingCount = ansBox ? ansBox.querySelectorAll('.flower-token').length : 0;
+                  const seqNum = existingCount + 1;
+
+                  const flower = spawnAnswerBoxFlower(seqNum);
+                  if (flower) {
+                    flower.classList.add('flower-attention');
+                    setHintTimeout(() => { if (flower) flower.classList.remove('flower-attention'); }, 500);
+                  }
+                  mergeAudio.playPop(seqNum);
+
+                  if (currentGroupCount < totalToSpawn) {
+                    setHintTimeout(revealNextFlower, 550);
+                    return;
+                  }
+                }
+
+                // Completed Second Group
+                mergeState.flower2Counted = true;
+                if (box2) {
+                  box2.classList.remove('hint-target-glow');
+                  box2.classList.add('box-completed');
+                }
+                saveMergeProgress();
+                setHintTimeout(next, 600);
+              }
+
+              revealNextFlower();
+            }, 500);
+          });
         }
       });
     }
 
-    // Step 5: Count Answer Box (individual flowers)
+    // =========================================================================
+    // 4. Count All Flowers Together
+    // =========================================================================
     if (!hasMerged) {
       sequence.push({
-        name: 'step5-count-answer-box',
+        name: 'step4-count-all-together',
         run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
           if (ansBox) ansBox.classList.add('counting-active');
           mergeState.stage = 'counting_total';
 
           const tokens = ansBox ? Array.from(ansBox.querySelectorAll('.flower-token')) : [];
-          const startIdx = mergeState.totalCounted || 0;
-          let countIdx = startIdx;
+          // Ensure all flowers display their sequential numbers
+          tokens.forEach((t, i) => {
+            const num = i + 1;
+            t.dataset.countOrder = String(num);
+            const digitText = t.querySelector('.flower-digit-text');
+            if (digitText) {
+              digitText.textContent = String(num);
+              digitText.classList.remove('hidden-digit');
+              digitText.classList.add('revealed');
+            }
+          });
 
-          function countNextFlower() {
+          let countIdx = 0;
+
+          function countNextNumber() {
+            if (!checkActive()) return;
             tokens.forEach(t => t.classList.remove('highlighted'));
 
             if (countIdx < q.answer && countIdx < tokens.length) {
               const currentNum = countIdx + 1;
               const flower = tokens[countIdx];
 
+              // Highlight corresponding individual flower as its number is spoken
               flower.classList.add('highlighted', 'counted');
               flower.dataset.counted = 'true';
-              flower.dataset.countOrder = String(currentNum);
               flower.classList.remove('uncounted');
-
-              const digitText = flower.querySelector('.flower-digit-text');
-              if (digitText) {
-                digitText.textContent = currentNum;
-                digitText.classList.remove('hidden-digit');
-                digitText.classList.add('revealed');
-              }
 
               flower.classList.remove('tapped');
               void flower.offsetWidth;
               flower.classList.add('tapped');
 
               mergeAudio.playPop(currentNum);
-              mergeTeacherVoice.countFlower(currentNum);
               mergeState.totalCounted = currentNum;
               saveMergeProgress();
 
-              countIdx++;
-              hintStepTimeout = setTimeout(countNextFlower, 750);
+              // Teacher slowly speaks each number separately: "One.", "Two.", "Three."
+              const word = mergeTeacherVoice.getWord(currentNum);
+              const spokenNumber = word.charAt(0).toUpperCase() + word.slice(1) + ".";
+
+              mergeTeacherVoice.speak(spokenNumber, () => {
+                if (!checkActive()) return;
+                // Sufficient time between each spoken number so child can follow
+                countIdx++;
+                setHintTimeout(countNextNumber, 600);
+              });
             } else {
               tokens.forEach(t => t.classList.remove('highlighted'));
-              if (equalsElem) equalsElem.classList.remove('symbol-glow', 'highlighted');
-              hintStepTimeout = setTimeout(next, 700);
+              setHintTimeout(next, 700);
             }
           }
 
-          countNextFlower();
+          countNextNumber();
         }
       });
     }
 
-    // Step 6: Merge the flowers
+    // =========================================================================
+    // 5. Merge the Flowers
+    // =========================================================================
     if (!hasMerged) {
       sequence.push({
-        name: 'step6-merge-flowers',
+        name: 'step5-merge-flowers',
         run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
           if (equalsElem) equalsElem.classList.remove('symbol-glow', 'highlighted');
           mergeState.stage = 'merging';
@@ -7258,7 +7363,8 @@ body {
                 flower.style.opacity = '0.35';
               });
 
-              hintStepTimeout = setTimeout(() => {
+              setHintTimeout(() => {
+                if (!checkActive()) return;
                 ansBox.innerHTML = '';
                 ansBox.classList.remove('counting-active');
                 ansBox.classList.add('box-completed');
@@ -7283,7 +7389,8 @@ body {
                 mergeState.stage = 'total_announced';
                 saveMergeProgress();
 
-                hintStepTimeout = setTimeout(next, 950);
+                // Wait until merging animation & chime completely finish
+                setHintTimeout(next, 950);
               }, 740);
               return;
             }
@@ -7291,29 +7398,37 @@ body {
 
           mergeState.hasMerged = true;
           mergeState.stage = 'total_announced';
-          hintStepTimeout = setTimeout(next, 300);
+          setHintTimeout(next, 300);
         }
       });
     }
 
-    // Step 7: Speak final total and reveal/highlight answer button
+    // =========================================================================
+    // 6. Announce the Final Total
+    // =========================================================================
     sequence.push({
-      name: 'step7-speak-final-total',
+      name: 'step6-announce-final-total',
       run: () => {
+        if (!checkActive()) return;
         clearHintHighlights();
+
         const wAns = mergeTeacherVoice.getWord(q.answer);
-        const capAns = wAns.charAt(0).toUpperCase() + wAns.slice(1);
+        const noun = q.answer === 1 ? 'flower' : 'flowers';
+        const announcementText = `We have ${wAns} ${noun} in total.`;
 
         let unlocked = false;
         function finishTutorial() {
           if (unlocked) return;
           unlocked = true;
+
+          // Unlock the three answer choices so child can select correct answer
           setMergeAnswerButtonsEnabled(true);
           mergeState.hasAnnouncedTotal = true;
           mergeState.isAnswerSelectionEnabled = true;
           mergeState.stage = 'answer';
           saveMergeProgress();
 
+          // Highlight matching answer button with golden glow
           const answerBtns = document.querySelectorAll('#merge-flower-answer-buttons .flower-btn');
           answerBtns.forEach(btn => {
             if (parseInt(btn.dataset.value, 10) === q.answer) {
@@ -7324,20 +7439,23 @@ body {
             }
           });
 
+          // Conclude tutorial
           mergeState.isHintActive = false;
           if (hintBtn) hintBtn.classList.remove('hint-active');
         }
 
-        // Teacher clearly says: "Three."
-        mergeTeacherVoice.speak(capAns + ".", finishTutorial);
-        hintStepTimeout = setTimeout(finishTutorial, 2500);
+        // Teacher says: "We have [total] flowers in total."
+        // Only after this announcement has finished speaking: conclude & unlock!
+        mergeTeacherVoice.speak(announcementText, () => {
+          setHintTimeout(finishTutorial, 400);
+        });
       }
     });
 
     // Execute sequential steps
     let currentIdx = 0;
     function executeNext() {
-      if (!mergeState.isHintActive) return;
+      if (!checkActive()) return;
       if (currentIdx < sequence.length) {
         const step = sequence[currentIdx];
         currentIdx++;
@@ -7653,6 +7771,11 @@ body {
   window.TenaliTriggerMergeCountingHint = triggerMergeCountingHint;
   window.TenaliStopMergeCountingHint = stopMergeCountingHint;
   window.TenaliOnNextMergeQuestion = onNextMergeQuestion;
+  window.TenaliMergeState = mergeState;
+  window.TenaliSetCurrentQuestion = function(q) {
+    mergeState.currentQuestion = q;
+    renderMergeQuestion();
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initActivity2);
@@ -8416,12 +8539,30 @@ body {
   // =========================================================================
 
   let hintStepTimeout = null;
+  let hintTimeouts = [];
 
-  function stopMergeCountingHint() {
+  function clearHintTimeouts() {
+    hintTimeouts.forEach(t => clearTimeout(t));
+    hintTimeouts = [];
     if (hintStepTimeout) {
       clearTimeout(hintStepTimeout);
       hintStepTimeout = null;
     }
+  }
+
+  function setHintTimeout(fn, delay) {
+    if (!mergeState.isHintActive) return null;
+    const tId = setTimeout(() => {
+      hintTimeouts = hintTimeouts.filter(id => id !== tId);
+      if (!mergeState.isHintActive) return;
+      fn();
+    }, delay);
+    hintTimeouts.push(tId);
+    return tId;
+  }
+
+  function stopMergeCountingHint() {
+    clearHintTimeouts();
     if (mergeState.hintInterval) {
       clearInterval(mergeState.hintInterval);
       mergeState.hintInterval = null;
@@ -8963,9 +9104,10 @@ body {
   window.TenaliRenderMergeQuestion = renderMergeQuestion;
 
   /**
-   * Spawns exactly one unnumbered individual flower into the Answer Box
+   * Spawns exactly one individual flower into the Answer Box.
+   * If countNumber is provided, displays the sequential counting number in the centre.
    */
-  function spawnAnswerBoxFlower() {
+  function spawnAnswerBoxFlower(countNumber = null) {
     const q = mergeState.currentQuestion;
     if (!q) return null;
 
@@ -8987,21 +9129,22 @@ body {
       pixelSize = 62;
     }
 
+    const hasNumber = (countNumber !== undefined && countNumber !== null && countNumber !== '');
     const flowerToken = document.createElement('div');
-    flowerToken.className = `flower-token ${flowerSizeClass} uncounted spawn-reveal`;
+    flowerToken.className = `flower-token ${flowerSizeClass} ${hasNumber ? 'counted' : 'uncounted'} spawn-reveal`;
     flowerToken.dataset.box = 'merge-3-answer-box';
-    flowerToken.dataset.counted = 'false';
-    flowerToken.dataset.countOrder = '';
+    flowerToken.dataset.counted = hasNumber ? 'true' : 'false';
+    flowerToken.dataset.countOrder = hasNumber ? String(countNumber) : '';
     flowerToken.dataset.index = String(existingCount);
 
     flowerToken.innerHTML = createStandardFlowerSVG({
-      number: '',
+      number: hasNumber ? countNumber : '',
       size: pixelSize,
       petalColor: palette.petal,
       petalDark: palette.petalDark,
       centerColor: palette.center,
       centerBorder: palette.centerBorder,
-      hideNumber: true // unnumbered yellow centre initially
+      hideNumber: !hasNumber // unnumbered yellow centre if no number provided
     });
 
     flowerToken.addEventListener('click', (e) => {
@@ -9616,16 +9759,43 @@ body {
 
   /**
    * Count With Me Tutorial in Activity 3:
-   * Demonstrates the complete addition step by step:
-   * Step 1 – First Flower (num1): Highlight, teacher speaks word ("One." / "Two."), reveals flower(s) in Answer Box.
-   * Step 2 – Second Flower (num2): Highlight, teacher speaks word ("Two." / "One."), reveals flower(s) in Answer Box.
-   * Step 3 – Addition sign (+): Highlight +, teacher says "Plus."
-   * Step 4 – Equals sign (=): Highlight =, teacher says "Equals to."
-   * Step 5 – Count Answer Box: Highlight each individual flower in sequence: "One, two, three." (remains individual)
-   * Step 6 – Merge the flowers: Play existing smooth flower-merging animation into Grand Merged Flower showing total.
-   * Step 7 – Speak the final total: Teacher clearly says the total word (e.g. "Three."), unlocks and highlights matching answer button.
+   * Slow, clear, and perfectly synchronised with the teacher's voice and flower animations.
    *
-   * If child has already completed part of counting, resumes from the appropriate next step without duplicating flowers.
+   * 1. First Group – Speak and Show Flowers:
+   *    - Highlight First Group
+   *    - Teacher speaks addend naturally & clearly (e.g. "Two.")
+   *    - Wait until voice completely finishes speaking (onend callback)
+   *    - Pause 500ms, then reveal individual flowers in Answer Box one at a time (numbered 1, 2, etc.)
+   *    - Pause between flower appearances so child can see each one
+   *
+   * 2. Plus Sign – Addition Instruction:
+   *    - Teacher says "Plus."
+   *    - Highlight plus sign while spoken
+   *    - Wait until voice finishes speaking before proceeding to Second Group
+   *
+   * 3. Second Group – Speak and Show Flowers:
+   *    - Highlight Second Group
+   *    - Teacher speaks second addend naturally & clearly (e.g. "One.")
+   *    - Wait until voice completely finishes speaking (onend callback)
+   *    - Pause 500ms, then reveal individual flowers in Answer Box one at a time,
+   *      continuing sequential counting numbers from First Group (e.g. 3, etc.)
+   *
+   * 4. Count All Flowers Together:
+   *    - Teacher slowly counts entire collection from 1 onwards: "One... Two... Three."
+   *    - Each number spoken separately
+   *    - Highlight corresponding individual flower in Answer Box as its number is spoken
+   *    - Sufficient pause between each spoken number so child can follow
+   *
+   * 5. Merge the Flowers:
+   *    - Only after complete counting sequence has finished, start existing flower-merging animation
+   *    - Flowers glide smoothly together into Grand Merged Flower showing correct total in centre
+   *
+   * 6. Announce the Final Total:
+   *    - After merging animation completely finishes, teacher says: "We have [total] flowers in total."
+   *    - Only after this announcement finishes speaking: conclude tutorial & unlock 3 answer choices
+   *
+   * Dynamic & resilient: If child taps Count With Me after partially revealing flowers,
+   * resumes from the appropriate next step without duplicating flowers or recounting.
    */
   function triggerMergeCountingHint() {
     if (mergeState.isHintActive || mergeState.isAnswered) return;
@@ -9648,6 +9818,11 @@ body {
     const plusElem = document.getElementById('merge-3-plus-symbol');
     const equalsElem = document.getElementById('merge-3-equals-symbol');
 
+    // Helper: checks if tutorial is still active before doing anything
+    function checkActive() {
+      return !!mergeState.isHintActive;
+    }
+
     // Check existing progress to avoid duplicate flowers or recounting
     const f1Done = mergeState.flower1Counted || ((mergeState.flower1Taps || 0) >= q.num1);
     const f2Done = mergeState.flower2Counted || ((mergeState.flower2Taps || 0) >= q.num2);
@@ -9655,192 +9830,245 @@ body {
 
     const sequence = [];
 
-    // Step 1: First Flower (if not already completed)
+    // =========================================================================
+    // 1. First Group – Speak and Show Flowers (if not already completed)
+    // =========================================================================
     if (!f1Done) {
       sequence.push({
-        name: 'step1-first-flower',
+        name: 'step1-first-group',
         run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
           if (box1) {
             box1.classList.add('hint-target-glow', 'tapped');
-            setTimeout(() => box1.classList.remove('tapped'), 400);
+            setHintTimeout(() => { if (checkActive() && box1) box1.classList.remove('tapped'); }, 400);
           }
+
+          // Teacher speaks the First Group addend naturally and clearly (e.g. "Two.")
           const w1 = mergeTeacherVoice.getWord(q.num1);
           const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
-          mergeTeacherVoice.speak(cap1 + ".");
-          mergeAudio.playPop(1);
 
-          const needed = q.num1 - (mergeState.flower1Taps || 0);
-          let spawned = 0;
-          function spawnLoop() {
-            if (spawned < needed) {
-              mergeState.flower1Taps = (mergeState.flower1Taps || 0) + 1;
-              const flower = spawnAnswerBoxFlower();
-              if (flower) {
-                flower.classList.add('flower-attention');
-                setTimeout(() => flower.classList.remove('flower-attention'), 500);
+          mergeTeacherVoice.speak(cap1 + ".", () => {
+            if (!checkActive()) return;
+            // Wait until the voice has completely finished speaking, then comfortable pause
+            setHintTimeout(() => {
+              if (!checkActive()) return;
+
+              // Reveal corresponding individual flowers in Answer Box, one at a time
+              let currentCount = mergeState.flower1Taps || 0;
+              const totalToSpawn = q.num1;
+
+              function revealNextFlower() {
+                if (!checkActive()) return;
+                if (currentCount < totalToSpawn) {
+                  currentCount++;
+                  mergeState.flower1Taps = currentCount;
+
+                  const existingCount = ansBox ? ansBox.querySelectorAll('.flower-token').length : 0;
+                  const seqNum = existingCount + 1;
+
+                  const flower = spawnAnswerBoxFlower(seqNum);
+                  if (flower) {
+                    flower.classList.add('flower-attention');
+                    setHintTimeout(() => { if (flower) flower.classList.remove('flower-attention'); }, 500);
+                  }
+                  mergeAudio.playPop(seqNum);
+
+                  if (currentCount < totalToSpawn) {
+                    setHintTimeout(revealNextFlower, 550);
+                    return;
+                  }
+                }
+
+                // Completed First Group
+                mergeState.flower1Counted = true;
+                if (box1) {
+                  box1.classList.remove('hint-target-glow');
+                  box1.classList.add('box-completed');
+                }
+                saveMergeProgress();
+                setHintTimeout(next, 600);
               }
-              mergeAudio.playPop(mergeState.flower1Taps);
-              spawned++;
-              if (spawned < needed) {
-                hintStepTimeout = setTimeout(spawnLoop, 350);
-                return;
-              }
-            }
-            mergeState.flower1Counted = true;
-            if (box1) {
-              box1.classList.remove('hint-target-glow');
-              box1.classList.add('box-completed');
-            }
-            saveMergeProgress();
-            hintStepTimeout = setTimeout(next, 750);
-          }
-          spawnLoop();
+
+              revealNextFlower();
+            }, 500);
+          });
         }
       });
     }
 
-    // Step 2: Second Flower (if not already completed)
-    if (!f2Done) {
+    // =========================================================================
+    // 2. Plus Sign – Addition Instruction
+    // =========================================================================
+    if (!hasMerged && !f2Done) {
       sequence.push({
-        name: 'step2-second-flower',
+        name: 'step2-plus-sign',
         run: (next) => {
-          clearHintHighlights();
-          if (box2) {
-            box2.classList.add('hint-target-glow', 'tapped');
-            setTimeout(() => box2.classList.remove('tapped'), 400);
-          }
-          const w2 = mergeTeacherVoice.getWord(q.num2);
-          const cap2 = w2.charAt(0).toUpperCase() + w2.slice(1);
-          mergeTeacherVoice.speak(cap2 + ".");
-          mergeAudio.playPop(1);
-
-          const needed = q.num2 - (mergeState.flower2Taps || 0);
-          let spawned = 0;
-          function spawnLoop() {
-            if (spawned < needed) {
-              mergeState.flower2Taps = (mergeState.flower2Taps || 0) + 1;
-              const flower = spawnAnswerBoxFlower();
-              if (flower) {
-                flower.classList.add('flower-attention');
-                setTimeout(() => flower.classList.remove('flower-attention'), 500);
-              }
-              mergeAudio.playPop(mergeState.flower2Taps);
-              spawned++;
-              if (spawned < needed) {
-                hintStepTimeout = setTimeout(spawnLoop, 350);
-                return;
-              }
-            }
-            mergeState.flower2Counted = true;
-            if (box2) {
-              box2.classList.remove('hint-target-glow');
-              box2.classList.add('box-completed');
-            }
-            saveMergeProgress();
-            hintStepTimeout = setTimeout(next, 750);
-          }
-          spawnLoop();
-        }
-      });
-    }
-
-    // Step 3: Addition sign (+)
-    if (!hasMerged && (!f1Done || !f2Done || mergeState.stage === 'counting_addends' || mergeState.stage === 'counting_total')) {
-      sequence.push({
-        name: 'step3-plus-sign',
-        run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
           if (plusElem) {
             plusElem.classList.add('symbol-glow', 'highlighted');
           }
           mergeAudio.playPop(1);
-          mergeTeacherVoice.speak("Plus.");
-          hintStepTimeout = setTimeout(() => {
-            if (plusElem) plusElem.classList.remove('highlighted');
-            next();
-          }, 800);
+
+          // Teacher says: "Plus."
+          mergeTeacherVoice.speak("Plus.", () => {
+            if (!checkActive()) return;
+            // Wait until voice has finished speaking before proceeding to Second Group
+            if (plusElem) {
+              plusElem.classList.remove('symbol-glow', 'highlighted');
+            }
+            setHintTimeout(next, 500);
+          });
         }
       });
     }
 
-    // Step 4: Equals sign (=)
-    if (!hasMerged) {
+    // =========================================================================
+    // 3. Second Group – Speak and Show Flowers (if not already completed)
+    // =========================================================================
+    if (!f2Done) {
       sequence.push({
-        name: 'step4-equals-sign',
+        name: 'step3-second-group',
         run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
-          if (plusElem) plusElem.classList.remove('symbol-glow', 'highlighted');
-          if (equalsElem) equalsElem.classList.add('symbol-glow', 'highlighted');
-          mergeAudio.playPop(1);
-          mergeTeacherVoice.speak("Equals to.");
-          hintStepTimeout = setTimeout(() => {
-            next();
-          }, 850);
+          if (box2) {
+            box2.classList.add('hint-target-glow', 'tapped');
+            setHintTimeout(() => { if (checkActive() && box2) box2.classList.remove('tapped'); }, 400);
+          }
+
+          // Teacher speaks the Second Group addend naturally and clearly (e.g. "One.")
+          const w2 = mergeTeacherVoice.getWord(q.num2);
+          const cap2 = w2.charAt(0).toUpperCase() + w2.slice(1);
+
+          mergeTeacherVoice.speak(cap2 + ".", () => {
+            if (!checkActive()) return;
+            // Wait until voice has completely finished speaking, then comfortable pause
+            setHintTimeout(() => {
+              if (!checkActive()) return;
+
+              // Reveal corresponding individual flowers in Answer Box, one at a time,
+              // continuing the sequential counting number from First Group (e.g. 3, etc.)
+              let currentGroupCount = mergeState.flower2Taps || 0;
+              const totalToSpawn = q.num2;
+
+              function revealNextFlower() {
+                if (!checkActive()) return;
+                if (currentGroupCount < totalToSpawn) {
+                  currentGroupCount++;
+                  mergeState.flower2Taps = currentGroupCount;
+
+                  const existingCount = ansBox ? ansBox.querySelectorAll('.flower-token').length : 0;
+                  const seqNum = existingCount + 1;
+
+                  const flower = spawnAnswerBoxFlower(seqNum);
+                  if (flower) {
+                    flower.classList.add('flower-attention');
+                    setHintTimeout(() => { if (flower) flower.classList.remove('flower-attention'); }, 500);
+                  }
+                  mergeAudio.playPop(seqNum);
+
+                  if (currentGroupCount < totalToSpawn) {
+                    setHintTimeout(revealNextFlower, 550);
+                    return;
+                  }
+                }
+
+                // Completed Second Group
+                mergeState.flower2Counted = true;
+                if (box2) {
+                  box2.classList.remove('hint-target-glow');
+                  box2.classList.add('box-completed');
+                }
+                saveMergeProgress();
+                setHintTimeout(next, 600);
+              }
+
+              revealNextFlower();
+            }, 500);
+          });
         }
       });
     }
 
-    // Step 5: Count Answer Box (individual flowers)
+    // =========================================================================
+    // 4. Count All Flowers Together
+    // =========================================================================
     if (!hasMerged) {
       sequence.push({
-        name: 'step5-count-answer-box',
+        name: 'step4-count-all-together',
         run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
           if (ansBox) ansBox.classList.add('counting-active');
           mergeState.stage = 'counting_total';
 
           const tokens = ansBox ? Array.from(ansBox.querySelectorAll('.flower-token')) : [];
-          const startIdx = mergeState.totalCounted || 0;
-          let countIdx = startIdx;
+          // Ensure all flowers display their sequential numbers
+          tokens.forEach((t, i) => {
+            const num = i + 1;
+            t.dataset.countOrder = String(num);
+            const digitText = t.querySelector('.flower-digit-text');
+            if (digitText) {
+              digitText.textContent = String(num);
+              digitText.classList.remove('hidden-digit');
+              digitText.classList.add('revealed');
+            }
+          });
 
-          function countNextFlower() {
+          let countIdx = 0;
+
+          function countNextNumber() {
+            if (!checkActive()) return;
             tokens.forEach(t => t.classList.remove('highlighted'));
 
             if (countIdx < q.answer && countIdx < tokens.length) {
               const currentNum = countIdx + 1;
               const flower = tokens[countIdx];
 
+              // Highlight corresponding individual flower as its number is spoken
               flower.classList.add('highlighted', 'counted');
               flower.dataset.counted = 'true';
-              flower.dataset.countOrder = String(currentNum);
               flower.classList.remove('uncounted');
-
-              const digitText = flower.querySelector('.flower-digit-text');
-              if (digitText) {
-                digitText.textContent = currentNum;
-                digitText.classList.remove('hidden-digit');
-                digitText.classList.add('revealed');
-              }
 
               flower.classList.remove('tapped');
               void flower.offsetWidth;
               flower.classList.add('tapped');
 
               mergeAudio.playPop(currentNum);
-              mergeTeacherVoice.countFlower(currentNum);
               mergeState.totalCounted = currentNum;
               saveMergeProgress();
 
-              countIdx++;
-              hintStepTimeout = setTimeout(countNextFlower, 750);
+              // Teacher slowly speaks each number separately: "One.", "Two.", "Three."
+              const word = mergeTeacherVoice.getWord(currentNum);
+              const spokenNumber = word.charAt(0).toUpperCase() + word.slice(1) + ".";
+
+              mergeTeacherVoice.speak(spokenNumber, () => {
+                if (!checkActive()) return;
+                // Sufficient time between each spoken number so child can follow
+                countIdx++;
+                setHintTimeout(countNextNumber, 600);
+              });
             } else {
               tokens.forEach(t => t.classList.remove('highlighted'));
-              if (equalsElem) equalsElem.classList.remove('symbol-glow', 'highlighted');
-              hintStepTimeout = setTimeout(next, 700);
+              setHintTimeout(next, 700);
             }
           }
 
-          countNextFlower();
+          countNextNumber();
         }
       });
     }
 
-    // Step 6: Merge the flowers
+    // =========================================================================
+    // 5. Merge the Flowers
+    // =========================================================================
     if (!hasMerged) {
       sequence.push({
-        name: 'step6-merge-flowers',
+        name: 'step5-merge-flowers',
         run: (next) => {
+          if (!checkActive()) return;
           clearHintHighlights();
           if (equalsElem) equalsElem.classList.remove('symbol-glow', 'highlighted');
           mergeState.stage = 'merging';
@@ -9864,7 +10092,8 @@ body {
                 flower.style.opacity = '0.35';
               });
 
-              hintStepTimeout = setTimeout(() => {
+              setHintTimeout(() => {
+                if (!checkActive()) return;
                 ansBox.innerHTML = '';
                 ansBox.classList.remove('counting-active');
                 ansBox.classList.add('box-completed');
@@ -9889,7 +10118,8 @@ body {
                 mergeState.stage = 'total_announced';
                 saveMergeProgress();
 
-                hintStepTimeout = setTimeout(next, 950);
+                // Wait until merging animation & chime completely finish
+                setHintTimeout(next, 950);
               }, 740);
               return;
             }
@@ -9897,29 +10127,37 @@ body {
 
           mergeState.hasMerged = true;
           mergeState.stage = 'total_announced';
-          hintStepTimeout = setTimeout(next, 300);
+          setHintTimeout(next, 300);
         }
       });
     }
 
-    // Step 7: Speak final total and reveal/highlight answer button
+    // =========================================================================
+    // 6. Announce the Final Total
+    // =========================================================================
     sequence.push({
-      name: 'step7-speak-final-total',
+      name: 'step6-announce-final-total',
       run: () => {
+        if (!checkActive()) return;
         clearHintHighlights();
+
         const wAns = mergeTeacherVoice.getWord(q.answer);
-        const capAns = wAns.charAt(0).toUpperCase() + wAns.slice(1);
+        const noun = q.answer === 1 ? 'flower' : 'flowers';
+        const announcementText = `We have ${wAns} ${noun} in total.`;
 
         let unlocked = false;
         function finishTutorial() {
           if (unlocked) return;
           unlocked = true;
+
+          // Unlock the three answer choices so child can select correct answer
           setMergeAnswerButtonsEnabled(true);
           mergeState.hasAnnouncedTotal = true;
           mergeState.isAnswerSelectionEnabled = true;
           mergeState.stage = 'answer';
           saveMergeProgress();
 
+          // Highlight matching answer button with golden glow
           const answerBtns = document.querySelectorAll('#merge-3-flower-answer-buttons .flower-btn');
           answerBtns.forEach(btn => {
             if (parseInt(btn.dataset.value, 10) === q.answer) {
@@ -9930,20 +10168,23 @@ body {
             }
           });
 
+          // Conclude tutorial
           mergeState.isHintActive = false;
           if (hintBtn) hintBtn.classList.remove('hint-active');
         }
 
-        // Teacher clearly says: "Three."
-        mergeTeacherVoice.speak(capAns + ".", finishTutorial);
-        hintStepTimeout = setTimeout(finishTutorial, 2500);
+        // Teacher says: "We have [total] flowers in total."
+        // Only after this announcement has finished speaking: conclude & unlock!
+        mergeTeacherVoice.speak(announcementText, () => {
+          setHintTimeout(finishTutorial, 400);
+        });
       }
     });
 
     // Execute sequential steps
     let currentIdx = 0;
     function executeNext() {
-      if (!mergeState.isHintActive) return;
+      if (!checkActive()) return;
       if (currentIdx < sequence.length) {
         const step = sequence[currentIdx];
         currentIdx++;
@@ -10064,6 +10305,10 @@ body {
     window.TenaliCancelActivity3Timers = clearTimers;
     window.TenaliMergeState3 = mergeState;
     window.TenaliRenderMergeQuestion3 = renderMergeQuestion;
+    window.TenaliSetCurrentQuestion3 = function(q) {
+      mergeState.currentQuestion = q;
+      renderMergeQuestion();
+    };
     window.TenaliTriggerMergeCountingHint3 = triggerMergeCountingHint;
     window.TenaliStopMergeCountingHint3 = stopMergeCountingHint;
     window.TenaliOnNextMergeQuestion3 = onNextMergeQuestion;
