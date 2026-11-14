@@ -91,7 +91,10 @@
   };
 
   // Active activity tracker: 'activity1' or 'activity2'
-  window.TenaliActiveActivity = 'activity1';
+  if (!window.TenaliActiveActivity) {
+    window.TenaliActiveActivity = 'activity1';
+  }
+  window.TenaliResetActivity2RoundCounting = resetMergeRoundCounting;
   window.TenaliMergeState = mergeState;
 
   // =========================================================================
@@ -226,16 +229,79 @@
   class Activity2TeacherVoice {
     constructor() {
       this.selectedVoice = null;
+      this.isVoiceReady = false;
       this.activeUtterance = null;
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.onvoiceschanged = () => this.ensureVoice();
-        this.ensureVoice();
+      this.initVoiceList();
+    }
+
+    isGoogleChrome() {
+      if (typeof navigator === 'undefined') return true;
+      const ua = (navigator.userAgent || '').toLowerCase();
+      const vendor = (navigator.vendor || '').toLowerCase();
+      if (ua.includes('brave') || (navigator.brave && typeof navigator.brave.isBrave === 'function')) return false;
+      if (ua.includes('edg/')) return false;
+      if (ua.includes('opr/') || ua.includes('opera') || ua.includes('opt/')) return false;
+      if (ua.includes('firefox') || ua.includes('fxios')) return false;
+      if ((ua.includes('safari') || vendor.includes('apple')) && !ua.includes('chrome') && !ua.includes('chromium')) return false;
+      if (ua.includes('vivaldi') || ua.includes('yabrowser')) return false;
+      return ua.includes('chrome') || ua.includes('crios') || vendor.includes('google');
+    }
+
+    initVoiceList() {
+      if (!('speechSynthesis' in window)) return;
+
+      const load = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          this.selectVoice(voices);
+          this.isVoiceReady = true;
+        }
+      };
+
+      // 1. Attempt immediate load
+      load();
+
+      // 2. Event listener for asynchronous voice loading
+      if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+        window.speechSynthesis.onvoiceschanged = load;
       }
+      if (window.speechSynthesis.addEventListener) {
+        window.speechSynthesis.addEventListener('voiceschanged', load);
+      }
+
+      // 3. Robust polling fallback for browsers with lazy-loaded voice lists (e.g. Chrome, Edge on Windows)
+      let pollCount = 0;
+      const pollTimer = setInterval(() => {
+        pollCount++;
+        const voices = window.speechSynthesis.getVoices();
+        if ((voices && voices.length > 0 && this.selectedVoice) || pollCount > 12) {
+          clearInterval(pollTimer);
+        } else if (voices && voices.length > 0) {
+          load();
+        }
+      }, 200);
     }
 
     ensureVoice() {
       if (!('speechSynthesis' in window)) return null;
       const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+
+      return this.selectVoice(voices);
+    }
+
+    selectVoice(voices) {
+      if (this.isGoogleChrome()) {
+        this.selectedVoice = this.selectExistingChromeVoice(voices);
+      } else {
+        this.selectedVoice = this.selectCrossBrowserVoice(voices);
+      }
+      this.isVoiceReady = !!this.selectedVoice;
+      return this.selectedVoice;
+    }
+
+    // Exact existing Chrome voice selection logic preserved strictly
+    selectExistingChromeVoice(voices) {
       if (!voices || voices.length === 0) return null;
 
       const isMale = (name) => {
@@ -275,7 +341,107 @@
         best = voices.find(v => (v.lang || '').toLowerCase().startsWith('en')) || voices[0];
       }
 
-      this.selectedVoice = best;
+      return best;
+    }
+
+    // Extended cross-browser selection for Brave, Edge, Firefox, Safari
+    selectCrossBrowserVoice(voices) {
+      if (!voices || voices.length === 0) return null;
+
+      const maleKeywords = [
+        'ravi', 'prabhat', 'madhur', 'david', 'mark', 'george', 'richard',
+        'james', 'alex', 'daniel', 'fred', 'male', 'guy', 'brian', 'tom',
+        'steffan', 'oliver', 'rishi', 'sanjay', 'ryan', 'adam', 'paul', 'john', 'michael'
+      ];
+      const isMale = (name) => {
+        const lower = (name || '').toLowerCase();
+        if (lower.includes('female') || lower.includes('woman') || lower.includes('girl')) {
+          return false;
+        }
+        return maleKeywords.some(m => lower.includes(m));
+      };
+
+      // 1. Prefer the same female teacher voice used in Chrome whenever that voice is available
+      const chromePreferred = this.selectExistingChromeVoice(voices);
+      if (chromePreferred && !isMale(chromePreferred.name) && (
+        (chromePreferred.lang || '').toLowerCase().includes('in') ||
+        (chromePreferred.name || '').toLowerCase().includes('female') ||
+        (chromePreferred.name || '').toLowerCase().includes('natural')
+      )) {
+        return chromePreferred;
+      }
+
+      const indianFemaleKeywords = [
+        'neerja', 'heera', 'swara', 'veena', 'lekha', 'isha', 'ananya', 'priya', 'kavya', 'shruti', 'aditi'
+      ];
+
+      // 2. Indian English Natural / Online Female voice (e.g. Edge Microsoft Neerja Online (Natural))
+      let best = voices.find(v => {
+        const lang = (v.lang || '').toLowerCase();
+        const name = (v.name || '').toLowerCase();
+        const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+        const isNatural = name.includes('natural') || name.includes('online');
+        const isFemale = indianFemaleKeywords.some(k => name.includes(k)) || name.includes('female');
+        return isIndian && isFemale && isNatural && !isMale(name);
+      });
+
+      // 3. Standard Indian English Female voice (e.g. Microsoft Heera, Veena)
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+          const isFemale = indianFemaleKeywords.some(k => name.includes(k)) || name.includes('female');
+          return isIndian && isFemale && !isMale(name);
+        });
+      }
+
+      // 4. Any Indian English non-male voice
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+          return isIndian && !isMale(name);
+        });
+      }
+
+      // 5. Hindi bilingual voice speaking English (hi-IN)
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          return (lang.startsWith('hi-in') || lang === 'hi_in') && !isMale(name);
+        });
+      }
+
+      // 6. Warm, gentle female English teacher fallback (e.g. Samantha, Zira, Jenny, Victoria, Hazel, Susan, Karen)
+      if (!best) {
+        const gentleFemale = [
+          'samantha', 'zira', 'jenny', 'victoria', 'hazel', 'susan', 'karen', 'moira',
+          'tessa', 'fiona', 'ava', 'allison', 'aria', 'cora', 'clara', 'natural', 'female'
+        ];
+        best = voices.find(v => {
+          const name = (v.name || '').toLowerCase();
+          const lang = (v.lang || '').toLowerCase();
+          return lang.startsWith('en') && gentleFemale.some(k => name.includes(k)) && !isMale(name);
+        });
+      }
+
+      // 7. Any non-male English voice
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          return lang.startsWith('en') && !isMale(name);
+        });
+      }
+
+      // 8. Final fallback to any English voice or first available voice
+      if (!best) {
+        best = voices.find(v => (v.lang || '').toLowerCase().startsWith('en')) || voices[0];
+      }
+
       return best;
     }
 
@@ -974,18 +1140,7 @@
       starsEarned: mergeState.starsEarned,
       currentStreak: mergeState.currentStreak,
       paletteIndex: mergeState.paletteIndex,
-      currentQuestion: mergeState.currentQuestion,
-      stage: mergeState.stage,
-      flower1Taps: mergeState.flower1Taps || 0,
-      flower2Taps: mergeState.flower2Taps || 0,
-      flower1Counted: !!mergeState.flower1Counted,
-      flower2Counted: !!mergeState.flower2Counted,
-      totalCounted: mergeState.totalCounted || 0,
-      hasMerged: !!mergeState.hasMerged,
-      hasAnnouncedTotal: !!mergeState.hasAnnouncedTotal,
-      isAnswerSelectionEnabled: !!mergeState.isAnswerSelectionEnabled,
-      isAnswered: !!mergeState.isAnswered,
-      selectedAnswer: mergeState.selectedAnswer
+      currentQuestion: mergeState.currentQuestion
     };
     safeSetItem(STORAGE_KEY_PROGRESS, JSON.stringify(data));
   }
@@ -1006,19 +1161,22 @@
       mergeState.currentStreak = typeof saved.currentStreak === 'number' ? saved.currentStreak : 0;
       mergeState.paletteIndex = typeof saved.paletteIndex === 'number' ? saved.paletteIndex : 0;
       mergeState.currentQuestion = saved.currentQuestion;
-      mergeState.flower1Taps = saved.flower1Taps || 0;
-      mergeState.flower2Taps = saved.flower2Taps || 0;
-      mergeState.flower1Counted = !!saved.flower1Counted || (mergeState.flower1Taps >= saved.currentQuestion.num1);
-      mergeState.flower2Counted = !!saved.flower2Counted || (mergeState.flower2Taps >= saved.currentQuestion.num2);
-      mergeState.totalCounted = saved.totalCounted || 0;
-      mergeState.hasMerged = !!saved.hasMerged;
-      mergeState.hasAnnouncedTotal = !!saved.hasAnnouncedTotal;
-      mergeState.isAnswerSelectionEnabled = !!saved.isAnswerSelectionEnabled;
-      mergeState.isAnswered = !!saved.isAnswered;
-      mergeState.selectedAnswer = saved.selectedAnswer || null;
-      mergeState.stage = saved.stage || 'counting_addends';
 
-      renderRestoredMergeQuestion();
+      // Reset all temporary counting & Answer Box states so Answer Box starts completely empty
+      mergeState.flower1Taps = 0;
+      mergeState.flower2Taps = 0;
+      mergeState.flower1Counted = false;
+      mergeState.flower2Counted = false;
+      mergeState.totalCounted = 0;
+      mergeState.hasMerged = false;
+      mergeState.hasAnnouncedTotal = false;
+      mergeState.isAnswerSelectionEnabled = false;
+      mergeState.isAnswered = false;
+      mergeState.selectedAnswer = null;
+      mergeState.stage = 'counting_addends';
+
+      renderMergeQuestion();
+      saveMergeProgress();
       return true;
     } catch (e) {
       console.warn('Failed to restore Activity 2 progress:', e);
@@ -1076,249 +1234,7 @@
   }
 
   function renderRestoredMergeQuestion() {
-    clearTimers();
-    clearConfetti();
-    clearHintHighlights();
-    resetMergeSymbolsGlow();
-
-    const q = mergeState.currentQuestion;
-    if (!q) return;
-
-    const palette = ACTIVITY2_PALETTES[mergeState.paletteIndex % ACTIVITY2_PALETTES.length];
-    applyActivity2FlowerTheme(palette);
-
-    // 1. Render First Flower Box
-    const box1 = document.getElementById('merge-flower-1-box');
-    const cont1 = document.getElementById('merge-container-1');
-    if (box1) {
-      box1.className = 'flower-group-box merge-flower-host';
-      if (mergeState.flower1Counted) {
-        box1.classList.add('box-completed');
-      }
-      renderAddendGroupFlowers(box1, q.num1, palette);
-      box1.onclick = (e) => {
-        if (e) e.stopPropagation();
-        handleFlower1Tap();
-      };
-    }
-    if (cont1) {
-      cont1.onclick = () => handleFlower1Tap();
-    }
-
-    // 2. Render Second Flower Box
-    const box2 = document.getElementById('merge-flower-2-box');
-    const cont2 = document.getElementById('merge-container-2');
-    if (box2) {
-      box2.className = 'flower-group-box merge-flower-host';
-      if (mergeState.flower2Counted) {
-        box2.classList.add('box-completed');
-      }
-      renderAddendGroupFlowers(box2, q.num2, palette);
-      box2.onclick = (e) => {
-        if (e) e.stopPropagation();
-        handleFlower2Tap();
-      };
-    }
-    if (cont2) {
-      cont2.onclick = () => handleFlower2Tap();
-    }
-
-    // 3. Render Symbols Glow
-    const plusElem = document.getElementById('merge-plus-symbol');
-    const equalsElem = document.getElementById('merge-equals-symbol');
-    const f1Done = mergeState.flower1Counted;
-    const f2Done = mergeState.flower2Counted;
-
-    if (f1Done && !f2Done) {
-      if (plusElem) plusElem.classList.add('symbol-glow');
-    } else if (f2Done && !f1Done) {
-      if (plusElem) plusElem.classList.add('symbol-glow');
-    } else if (f1Done && f2Done) {
-      if (plusElem) plusElem.classList.remove('symbol-glow');
-      if (!mergeState.hasMerged && equalsElem) {
-        equalsElem.classList.add('symbol-glow');
-      }
-    }
-
-    // 4. Render Answer Box
-    const resBox = document.getElementById('merge-answer-box');
-    if (resBox) {
-      resBox.className = 'flower-group-box flower-combined-group-box merge-answer-box';
-      resBox.innerHTML = '';
-
-      if (!f1Done || !f2Done) {
-        // Still counting original flowers: render (flower1Taps + flower2Taps) unnumbered flowers
-        const spawnedCount = (mergeState.flower1Taps || 0) + (mergeState.flower2Taps || 0);
-        let flowerSizeClass = 'size-lg';
-        let pixelSize = 72;
-        if (q.answer > 6) {
-          flowerSizeClass = 'size-sm';
-          pixelSize = 52;
-        } else if (q.answer > 4) {
-          flowerSizeClass = 'size-md';
-          pixelSize = 62;
-        }
-
-        for (let i = 0; i < spawnedCount; i++) {
-          const flowerToken = document.createElement('div');
-          flowerToken.className = `flower-token ${flowerSizeClass} uncounted`;
-          flowerToken.dataset.box = 'merge-answer-box';
-          flowerToken.dataset.counted = 'false';
-          flowerToken.dataset.countOrder = '';
-          flowerToken.dataset.index = String(i);
-
-          flowerToken.innerHTML = createStandardFlowerSVG({
-            number: '',
-            size: pixelSize,
-            petalColor: palette.petal,
-            petalDark: palette.petalDark,
-            centerColor: palette.center,
-            centerBorder: palette.centerBorder,
-            hideNumber: true
-          });
-
-          flowerToken.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleAnswerBoxFlowerTap(flowerToken);
-          });
-
-          resBox.appendChild(flowerToken);
-        }
-      } else if (mergeState.hasMerged) {
-        // Merged into Grand Flower
-        resBox.classList.add('box-completed');
-        const grandDiv = document.createElement('div');
-        grandDiv.className = 'grand-merged-flower';
-        grandDiv.id = 'grand-merged-flower';
-        grandDiv.innerHTML = createGrandMergedFlowerSVG({
-          total: q.answer,
-          size: 116,
-          petalColor: palette.petal,
-          petalDark: palette.petalDark,
-          centerColor: palette.center,
-          centerBorder: palette.centerBorder
-        });
-        resBox.appendChild(grandDiv);
-      } else {
-        // Both addends complete, counting total flowers in Answer Box
-        resBox.classList.add('counting-active');
-
-        let flowerSizeClass = 'size-lg';
-        let pixelSize = 72;
-        if (q.answer > 6) {
-          flowerSizeClass = 'size-sm';
-          pixelSize = 52;
-        } else if (q.answer > 4) {
-          flowerSizeClass = 'size-md';
-          pixelSize = 62;
-        }
-
-        for (let i = 0; i < q.answer; i++) {
-          const isCounted = i < mergeState.totalCounted;
-          const flowerToken = document.createElement('div');
-          flowerToken.className = `flower-token ${flowerSizeClass} ${isCounted ? 'counted' : 'uncounted'}`;
-          flowerToken.dataset.box = 'merge-answer-box';
-          flowerToken.dataset.counted = isCounted ? 'true' : 'false';
-          flowerToken.dataset.countOrder = isCounted ? String(i + 1) : '';
-          flowerToken.dataset.index = String(i);
-
-          flowerToken.innerHTML = createStandardFlowerSVG({
-            number: isCounted ? String(i + 1) : '',
-            size: pixelSize,
-            petalColor: palette.petal,
-            petalDark: palette.petalDark,
-            centerColor: palette.center,
-            centerBorder: palette.centerBorder,
-            hideNumber: !isCounted
-          });
-
-          flowerToken.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleAnswerBoxFlowerTap(flowerToken);
-          });
-
-          resBox.appendChild(flowerToken);
-        }
-      }
-    }
-
-    // 5. Render Answer Buttons
-    const answerContainer = document.getElementById('merge-flower-answer-buttons');
-    if (answerContainer) {
-      answerContainer.innerHTML = '';
-      answerContainer.style.display = 'flex';
-      answerContainer.style.pointerEvents = (mergeState.isAnswered || !mergeState.isAnswerSelectionEnabled) ? 'none' : '';
-
-      q.options.forEach((val) => {
-        const btn = document.createElement('button');
-        const isCorrectChoice = mergeState.isAnswered && val === q.answer;
-
-        btn.className = 'flower-btn';
-        if (!mergeState.isAnswerSelectionEnabled && !mergeState.isAnswered) {
-          btn.classList.add('disabled');
-          btn.disabled = true;
-        }
-        if (isCorrectChoice) {
-          btn.classList.add('correct');
-        }
-
-        btn.dataset.value = String(val);
-        btn.setAttribute('aria-label', `Flower option ${val}`);
-
-        btn.innerHTML = createAnswerFlowerSVG({
-          number: val,
-          size: 86,
-          petalColor: palette.petal,
-          petalDark: palette.petalDark,
-          centerColor: palette.center,
-          centerBorder: palette.centerBorder
-        });
-
-        btn.addEventListener('click', (e) => {
-          handleMergeAnswerSelect(val, btn, e);
-        });
-
-        answerContainer.appendChild(btn);
-      });
-    }
-
-    // 6. Feedback Ribbon
-    const ribbon = document.getElementById('merge-feedback-ribbon');
-    if (ribbon) {
-      ribbon.innerHTML = '';
-      if (mergeState.isAnswered) {
-        const isRound10 = mergeState.starsEarned >= mergeState.maxStars;
-        let actionBtnText = 'Play Next Round';
-        if (isRound10) {
-          actionBtnText = mergeState.level < 3 ? 'Start Next Level' : 'Play Again';
-        }
-
-        ribbon.innerHTML = `
-          <div class="feedback-msg success">
-            <span class="feedback-icon" aria-hidden="true">🌟</span>
-            <span class="feedback-text">Excellent! &nbsp;${q.num1} + ${q.num2} = ${q.answer}&nbsp; Good job!</span>
-          </div>
-          <button id="merge-next-btn" class="next-question-btn">
-            ${actionBtnText}
-          </button>
-        `;
-
-        const nextBtn = document.getElementById('merge-next-btn');
-        if (nextBtn) {
-          nextBtn.addEventListener('click', () => {
-            if (isRound10) {
-              showMergeLevelCompleteModal();
-            } else {
-              onNextMergeQuestion();
-            }
-          });
-        }
-      }
-    }
-
-    // 7. Update Level & Stars
-    updateMergeLevelBadge();
-    updateMergeProgressStars();
+    renderMergeQuestion();
   }
 
   /**
@@ -2114,17 +2030,22 @@
    *    - Pause 500ms, then reveal individual flowers in Answer Box one at a time,
    *      continuing sequential counting numbers from First Group (e.g. 3, etc.)
    *
-   * 4. Count All Flowers Together:
+   * 4. Equals Sign – Addition Instruction:
+   *    - Highlight equals sign while teacher speaks (following Activity 1 visual behaviour)
+   *    - Teacher says: "Equals"
+   *    - Wait until voice finishes speaking before proceeding to next counting step
+   *
+   * 5. Count All Flowers Together:
    *    - Teacher slowly counts entire collection from 1 onwards: "One... Two... Three."
    *    - Each number spoken separately
    *    - Highlight corresponding individual flower in Answer Box as its number is spoken
    *    - Sufficient pause between each spoken number so child can follow
    *
-   * 5. Merge the Flowers:
+   * 6. Merge the Flowers:
    *    - Only after complete counting sequence has finished, start existing flower-merging animation
    *    - Flowers glide smoothly together into Grand Merged Flower showing correct total in centre
    *
-   * 6. Announce the Final Total:
+   * 7. Announce the Final Total:
    *    - After merging animation completely finishes, teacher says: "We have [total] flowers in total."
    *    - Only after this announcement finishes speaking: conclude tutorial & unlock 3 answer choices
    *
@@ -2327,7 +2248,35 @@
     }
 
     // =========================================================================
-    // 4. Count All Flowers Together
+    // 4. Equals Sign – Addition Instruction
+    // =========================================================================
+    if (!hasMerged) {
+      sequence.push({
+        name: 'step-equals-sign',
+        run: (next) => {
+          if (!checkActive()) return;
+          clearHintHighlights();
+          if (equalsElem) {
+            equalsElem.classList.add('symbol-glow', 'highlighted');
+          }
+          mergeAudio.playPop(1);
+
+          // Teacher speaks equals aloud: "Equals" (matching Activity 1 audio behaviour & cadence)
+          mergeTeacherVoice.speak("Equals", () => {
+            if (!checkActive()) return;
+            // Wait until the spoken word has completely finished before proceeding to next counting step
+            if (equalsElem) {
+              equalsElem.classList.remove('highlighted');
+              equalsElem.classList.add('symbol-glow');
+            }
+            setHintTimeout(next, 500);
+          });
+        }
+      });
+    }
+
+    // =========================================================================
+    // 5. Count All Flowers Together
     // =========================================================================
     if (!hasMerged) {
       sequence.push({
@@ -2655,6 +2604,15 @@
         if (typeof window.TenaliCancelActivity3Timers === 'function') {
           window.TenaliCancelActivity3Timers();
         }
+        if (typeof window.TenaliStopMergeCountingHint === 'function') {
+          window.TenaliStopMergeCountingHint();
+        }
+        if (typeof window.TenaliStopMergeCountingHint3 === 'function') {
+          window.TenaliStopMergeCountingHint3();
+        }
+        if (typeof window.TenaliResetActivity1RoundCounting === 'function') {
+          window.TenaliResetActivity1RoundCounting(true);
+        }
 
         // Scroll into view
         if (shouldScroll && card1 && typeof card1.scrollIntoView === 'function') {
@@ -2670,18 +2628,25 @@
         if (item2) item2.classList.add('active');
         if (item3) item3.classList.remove('active');
 
+        clearTimers();
         if (typeof window.TenaliCancelActivity3Timers === 'function') {
           window.TenaliCancelActivity3Timers();
         }
+        if (typeof window.TenaliStopMergeCountingHint3 === 'function') {
+          window.TenaliStopMergeCountingHint3();
+        }
+        if (typeof window.TenaliResetActivity1RoundCounting === 'function') {
+          window.TenaliResetActivity1RoundCounting(true);
+        }
 
-        // Initialize or restore Activity 2 question
+        // Initialize or restore Activity 2 question (Answer Box starts empty)
         if (!mergeState.currentQuestion) {
           if (!restoreMergeProgress()) {
             mergeState.currentQuestion = generateMergeQuestion();
             renderMergeQuestion();
           }
         } else {
-          renderRestoredMergeQuestion();
+          resetMergeRoundCounting();
         }
 
         updateMergeLevelBadge();
@@ -2702,6 +2667,12 @@
         if (item3) item3.classList.add('active');
 
         clearTimers();
+        if (typeof window.TenaliStopMergeCountingHint === 'function') {
+          window.TenaliStopMergeCountingHint();
+        }
+        if (typeof window.TenaliResetActivity1RoundCounting === 'function') {
+          window.TenaliResetActivity1RoundCounting(true);
+        }
 
         if (typeof window.TenaliSwitchToActivity3 === 'function') {
           window.TenaliSwitchToActivity3(shouldScroll);

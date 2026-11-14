@@ -183,13 +183,26 @@
       this.initVoiceList();
     }
 
+    isGoogleChrome() {
+      if (typeof navigator === 'undefined') return true;
+      const ua = (navigator.userAgent || '').toLowerCase();
+      const vendor = (navigator.vendor || '').toLowerCase();
+      if (ua.includes('brave') || (navigator.brave && typeof navigator.brave.isBrave === 'function')) return false;
+      if (ua.includes('edg/')) return false;
+      if (ua.includes('opr/') || ua.includes('opera') || ua.includes('opt/')) return false;
+      if (ua.includes('firefox') || ua.includes('fxios')) return false;
+      if ((ua.includes('safari') || vendor.includes('apple')) && !ua.includes('chrome') && !ua.includes('chromium')) return false;
+      if (ua.includes('vivaldi') || ua.includes('yabrowser')) return false;
+      return ua.includes('chrome') || ua.includes('crios') || vendor.includes('google');
+    }
+
     initVoiceList() {
       if (!('speechSynthesis' in window)) return;
 
       const load = () => {
         const voices = window.speechSynthesis.getVoices();
         if (voices && voices.length > 0) {
-          this.selectBestIndianVoice(voices);
+          this.selectVoice(voices);
           this.isVoiceReady = true;
         }
       };
@@ -222,14 +235,28 @@
       if (!this.selectedVoice && 'speechSynthesis' in window) {
         const voices = window.speechSynthesis.getVoices();
         if (voices && voices.length > 0) {
-          this.selectBestIndianVoice(voices);
+          this.selectVoice(voices);
           this.isVoiceReady = true;
         }
       }
       return this.selectedVoice;
     }
 
+    selectVoice(voices) {
+      if (this.isGoogleChrome()) {
+        this.selectedVoice = this.selectExistingChromeVoice(voices);
+      } else {
+        this.selectedVoice = this.selectCrossBrowserVoice(voices);
+      }
+      return this.selectedVoice;
+    }
+
     selectBestIndianVoice(voices) {
+      return this.selectVoice(voices);
+    }
+
+    // Exact existing Chrome voice selection logic preserved strictly
+    selectExistingChromeVoice(voices) {
       if (!voices || voices.length === 0) return null;
 
       // Exact Activity I Indian female teacher voice candidates
@@ -310,7 +337,107 @@
         best = voices.find(v => (v.lang || '').toLowerCase().startsWith('en')) || voices[0];
       }
 
-      this.selectedVoice = best;
+      return best;
+    }
+
+    // Extended cross-browser selection for Brave, Edge, Firefox, Safari
+    selectCrossBrowserVoice(voices) {
+      if (!voices || voices.length === 0) return null;
+
+      const maleKeywords = [
+        'ravi', 'prabhat', 'madhur', 'david', 'mark', 'george', 'richard',
+        'james', 'alex', 'daniel', 'fred', 'male', 'guy', 'brian', 'tom',
+        'steffan', 'oliver', 'rishi', 'sanjay', 'ryan', 'adam', 'paul', 'john', 'michael'
+      ];
+      const isMale = (name) => {
+        const lower = (name || '').toLowerCase();
+        if (lower.includes('female') || lower.includes('woman') || lower.includes('girl')) {
+          return false;
+        }
+        return maleKeywords.some(m => lower.includes(m));
+      };
+
+      // 1. Prefer the same female teacher voice used in Chrome whenever that voice is available
+      const chromePreferred = this.selectExistingChromeVoice(voices);
+      if (chromePreferred && !isMale(chromePreferred.name) && (
+        (chromePreferred.lang || '').toLowerCase().includes('in') ||
+        (chromePreferred.name || '').toLowerCase().includes('female') ||
+        (chromePreferred.name || '').toLowerCase().includes('natural')
+      )) {
+        return chromePreferred;
+      }
+
+      const indianFemaleKeywords = [
+        'neerja', 'heera', 'swara', 'veena', 'lekha', 'isha', 'ananya', 'priya', 'kavya', 'shruti', 'aditi'
+      ];
+
+      // 2. Indian English Natural / Online Female voice (e.g. Edge Microsoft Neerja Online (Natural))
+      let best = voices.find(v => {
+        const lang = (v.lang || '').toLowerCase();
+        const name = (v.name || '').toLowerCase();
+        const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+        const isNatural = name.includes('natural') || name.includes('online');
+        const isFemale = indianFemaleKeywords.some(k => name.includes(k)) || name.includes('female');
+        return isIndian && isFemale && isNatural && !isMale(name);
+      });
+
+      // 3. Standard Indian English Female voice (e.g. Microsoft Heera, Veena)
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+          const isFemale = indianFemaleKeywords.some(k => name.includes(k)) || name.includes('female');
+          return isIndian && isFemale && !isMale(name);
+        });
+      }
+
+      // 4. Any Indian English non-male voice
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          const isIndian = lang.startsWith('en-in') || lang === 'en_in' || name.includes('india');
+          return isIndian && !isMale(name);
+        });
+      }
+
+      // 5. Hindi bilingual voice speaking English (hi-IN)
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          return (lang.startsWith('hi-in') || lang === 'hi_in') && !isMale(name);
+        });
+      }
+
+      // 6. Warm, gentle female English teacher fallback (e.g. Samantha, Zira, Jenny, Victoria, Hazel, Susan, Karen)
+      if (!best) {
+        const gentleFemale = [
+          'samantha', 'zira', 'jenny', 'victoria', 'hazel', 'susan', 'karen', 'moira',
+          'tessa', 'fiona', 'ava', 'allison', 'aria', 'cora', 'clara', 'natural', 'female'
+        ];
+        best = voices.find(v => {
+          const name = (v.name || '').toLowerCase();
+          const lang = (v.lang || '').toLowerCase();
+          return lang.startsWith('en') && gentleFemale.some(k => name.includes(k)) && !isMale(name);
+        });
+      }
+
+      // 7. Any non-male English voice
+      if (!best) {
+        best = voices.find(v => {
+          const lang = (v.lang || '').toLowerCase();
+          const name = (v.name || '').toLowerCase();
+          return lang.startsWith('en') && !isMale(name);
+        });
+      }
+
+      // 8. Final fallback to any English voice or first available voice
+      if (!best) {
+        best = voices.find(v => (v.lang || '').toLowerCase().startsWith('en')) || voices[0];
+      }
+
       return best;
     }
 
@@ -353,7 +480,10 @@
         utterance.pitch = 1.08; // Exact Activity I pitch: warm, friendly, gentle teacher pitch
         utterance.volume = 1.0;
 
+        let called = false;
         const cleanup = () => {
+          if (called) return;
+          called = true;
           this.activeUtterance = null;
           if (onEnd) onEnd();
         };
@@ -363,6 +493,9 @@
           console.warn('Teacher speech error:', e);
           cleanup();
         };
+
+        // Safety fallback timer so speech callback always resolves even if speech engine stalls
+        setTimeout(cleanup, 4500);
 
         window.speechSynthesis.speak(utterance);
       } catch (e) {
@@ -754,12 +887,34 @@
     }
   }
 
+  let hintTimers = [];
+  function setHintTimeout(fn, delay) {
+    if (!state.isCountingHintActive) return null;
+    const t = setTimeout(() => {
+      const idx = hintTimers.indexOf(t);
+      if (idx !== -1) hintTimers.splice(idx, 1);
+      if (state.isCountingHintActive) fn();
+    }, delay);
+    hintTimers.push(t);
+    return t;
+  }
+
+  function clearHintTimers() {
+    hintTimers.forEach(t => clearTimeout(t));
+    hintTimers = [];
+  }
+
   function stopCountingHint() {
+    clearHintTimers();
     if (state.hintInterval) {
       clearInterval(state.hintInterval);
       state.hintInterval = null;
     }
     state.isCountingHintActive = false;
+    const hintBtn = document.getElementById('btn-count-hint');
+    if (hintBtn) {
+      hintBtn.classList.remove('hint-active');
+    }
     document.querySelectorAll('.flower-token.highlighted').forEach(el => {
       el.classList.remove('highlighted');
     });
@@ -1305,7 +1460,7 @@
   // - Resets plus and equals glow effects
   // - Resets counting progress, announcement state, and answer-selection state (disabled)
   // - Allows repeating sequence for same question without altering level or score.
-  function resetRoundCounting() {
+  function resetRoundCounting(silent = false) {
     stopCountingHint();
     clearAnnouncementTimers();
     if ('speechSynthesis' in window) {
@@ -1371,7 +1526,9 @@
       resultBox.classList.remove('counting-active', 'box-completed', 'box-attention');
     }
 
-    audio.playPop(1);
+    if (!silent) {
+      audio.playPop(1);
+    }
   }
 
   function resetBoxCounting(boxId) {
@@ -1573,140 +1730,243 @@
     state.isCountingHintActive = true;
     audio.init();
 
+    const hintBtn = document.getElementById('btn-count-hint');
+    if (hintBtn) {
+      hintBtn.classList.add('hint-active');
+    }
+
     const q = state.currentQuestion;
+    if (!q) return;
+
     const box1El = document.getElementById('flower-group-1');
     const box2El = document.getElementById('flower-group-2');
+    const resBox = document.getElementById('flower-group-result');
     const g1Flowers = box1El ? Array.from(box1El.querySelectorAll('.flower-token')) : [];
     const g2Flowers = box2El ? Array.from(box2El.querySelectorAll('.flower-token')) : [];
     const plusElem = document.querySelector('.math-plus-symbol');
     const equalsElem = document.querySelector('.math-equals-symbol');
 
-    // Build the sequential steps:
-    const steps = [];
-
-    // 1. Group 1 flowers (count 1..num1) -> auto-spawns unnumbered flowers in Combined Total
-    g1Flowers.forEach((f, i) => {
-      steps.push({ action: 'flower-g1', elem: f, count: i + 1 });
-    });
-
-    // 2. Plus sign glow after Group 1 finishes
-    steps.push({ action: 'plus-operator' });
-
-    // 3. Group 2 flowers (count 1..num2) -> auto-spawns unnumbered flowers in Combined Total
-    g2Flowers.forEach((f, i) => {
-      steps.push({ action: 'flower-g2', elem: f, count: i + 1 });
-    });
-
-    // 4. Group 2 finishes -> plus turns off, equals glows, all flowers now in Combined Total unnumbered!
-    steps.push({ action: 'equals-transition' });
-
-    // 5. Total flowers manual count (count 1..answer, reveals digits in centers)
-    for (let i = 1; i <= q.answer; i++) {
-      steps.push({ action: 'flower-result', count: i });
+    function checkActive() {
+      return !!state.isCountingHintActive;
     }
 
-    // 6. Complete total counting -> equals turns off, voice announcement plays, answer buttons unlock
-    steps.push({ action: 'complete-total' });
+    // Step 1: Count First Group flowers (1..q.num1)
+    if (box1El) {
+      box1El.classList.add('counting-active');
+    }
+    state.currentStage = 'group1';
 
-    let stepIndex = 0;
-    state.hintInterval = setInterval(() => {
-      // Clear previous flower highlights
+    let g1Idx = 0;
+    function countNextGroup1Flower() {
+      if (!checkActive()) return;
+
       document.querySelectorAll('.flower-token.highlighted').forEach(el => {
         el.classList.remove('highlighted');
       });
 
-      if (stepIndex < steps.length) {
-        const step = steps[stepIndex];
+      if (g1Idx < g1Flowers.length) {
+        const count = g1Idx + 1;
+        const flowerEl = g1Flowers[g1Idx];
 
-        if (step.action === 'flower-g1') {
-          step.elem.classList.add('highlighted');
-          step.elem.dataset.counted = 'true';
-          step.elem.dataset.countOrder = String(step.count);
-          step.elem.classList.remove('uncounted');
-          step.elem.classList.add('counted');
+        flowerEl.classList.add('highlighted', 'counted');
+        flowerEl.dataset.counted = 'true';
+        flowerEl.dataset.countOrder = String(count);
+        flowerEl.classList.remove('uncounted');
 
-          const textElem = step.elem.querySelector('.flower-digit-text');
+        const textElem = flowerEl.querySelector('.flower-digit-text');
+        if (textElem) {
+          textElem.textContent = count;
+          textElem.classList.remove('hidden-digit');
+          textElem.classList.add('revealed');
+        }
+
+        flowerEl.classList.remove('tapped');
+        void flowerEl.offsetWidth;
+        flowerEl.classList.add('tapped');
+
+        state.boxCounters['flower-group-1'] = count;
+        audio.playPop(count);
+
+        // Auto-spawn corresponding unnumbered flower in Combined Total box
+        spawnUnnumberedTotalFlower();
+
+        // Speak flower count and wait until speech completely finishes + 600ms pause (matching Activities 2 & 3)
+        teacherVoice.countFlower(count, () => {
+          if (!checkActive()) return;
+          g1Idx++;
+          if (g1Idx < g1Flowers.length) {
+            setHintTimeout(countNextGroup1Flower, 600);
+          } else {
+            // Group 1 complete
+            if (box1El) {
+              box1El.classList.remove('counting-active');
+              box1El.classList.add('box-completed');
+            }
+            setHintTimeout(stepPlusSign, 600);
+          }
+        });
+      } else {
+        if (box1El) {
+          box1El.classList.remove('counting-active');
+          box1El.classList.add('box-completed');
+        }
+        setHintTimeout(stepPlusSign, 600);
+      }
+    }
+
+    // Step 2: Plus Sign addition instruction
+    function stepPlusSign() {
+      if (!checkActive()) return;
+
+      document.querySelectorAll('.flower-token.highlighted').forEach(el => {
+        el.classList.remove('highlighted');
+      });
+
+      if (plusElem) {
+        plusElem.classList.add('symbol-glow', 'highlighted');
+      }
+      state.currentStage = 'group2';
+      audio.playPop(1);
+
+      // Teacher says "Plus!" and waits until speech finishes + 500ms pause (matching Activities 2 & 3)
+      teacherVoice.speak("Plus!", () => {
+        if (!checkActive()) return;
+        if (plusElem) {
+          plusElem.classList.remove('highlighted');
+          plusElem.classList.add('symbol-glow');
+        }
+        setHintTimeout(stepGroup2, 500);
+      });
+    }
+
+    // Step 3: Count Second Group flowers (1..q.num2)
+    function stepGroup2() {
+      if (!checkActive()) return;
+
+      if (box2El) {
+        box2El.classList.add('counting-active');
+      }
+
+      let g2Idx = 0;
+      function countNextGroup2Flower() {
+        if (!checkActive()) return;
+
+        document.querySelectorAll('.flower-token.highlighted').forEach(el => {
+          el.classList.remove('highlighted');
+        });
+
+        if (g2Idx < g2Flowers.length) {
+          const count = g2Idx + 1;
+          const flowerEl = g2Flowers[g2Idx];
+
+          flowerEl.classList.add('highlighted', 'counted');
+          flowerEl.dataset.counted = 'true';
+          flowerEl.dataset.countOrder = String(count);
+          flowerEl.classList.remove('uncounted');
+
+          const textElem = flowerEl.querySelector('.flower-digit-text');
           if (textElem) {
-            textElem.textContent = step.count;
+            textElem.textContent = count;
             textElem.classList.remove('hidden-digit');
             textElem.classList.add('revealed');
           }
 
-          state.boxCounters['flower-group-1'] = step.count;
-          audio.playPop(step.count);
-          teacherVoice.countFlower(step.count);
+          flowerEl.classList.remove('tapped');
+          void flowerEl.offsetWidth;
+          flowerEl.classList.add('tapped');
+
+          state.boxCounters['flower-group-2'] = count;
+          audio.playPop(count);
 
           // Auto-spawn corresponding unnumbered flower in Combined Total box
           spawnUnnumberedTotalFlower();
 
-        } else if (step.action === 'plus-operator') {
-          if (box1El) {
-            box1El.classList.remove('counting-active');
-            box1El.classList.add('box-completed');
-          }
-          if (plusElem) {
-            plusElem.classList.add('symbol-glow');
-          }
-          state.currentStage = 'group2';
-          audio.playPop(1);
-          teacherVoice.speak("Plus!");
-
-        } else if (step.action === 'flower-g2') {
-          step.elem.classList.add('highlighted');
-          step.elem.dataset.counted = 'true';
-          step.elem.dataset.countOrder = String(step.count);
-          step.elem.classList.remove('uncounted');
-          step.elem.classList.add('counted');
-
-          const textElem = step.elem.querySelector('.flower-digit-text');
-          if (textElem) {
-            textElem.textContent = step.count;
-            textElem.classList.remove('hidden-digit');
-            textElem.classList.add('revealed');
-          }
-
-          state.boxCounters['flower-group-2'] = step.count;
-          audio.playPop(step.count);
-          teacherVoice.countFlower(step.count);
-
-          // Auto-spawn corresponding unnumbered flower in Combined Total box
-          spawnUnnumberedTotalFlower();
-
-        } else if (step.action === 'equals-transition') {
+          // Speak flower count and wait until speech completely finishes + 600ms pause (matching Activities 2 & 3)
+          teacherVoice.countFlower(count, () => {
+            if (!checkActive()) return;
+            g2Idx++;
+            if (g2Idx < g2Flowers.length) {
+              setHintTimeout(countNextGroup2Flower, 600);
+            } else {
+              // Group 2 complete
+              if (box2El) {
+                box2El.classList.remove('counting-active');
+                box2El.classList.add('box-completed');
+              }
+              setHintTimeout(stepEqualsSign, 600);
+            }
+          });
+        } else {
           if (box2El) {
             box2El.classList.remove('counting-active');
             box2El.classList.add('box-completed');
           }
-          if (plusElem) {
-            plusElem.classList.remove('symbol-glow');
-          }
-          if (equalsElem) {
-            equalsElem.classList.add('symbol-glow');
-          }
-          state.currentStage = 'counting_total';
-          audio.playPop(1);
-          teacherVoice.speak("Equals!");
+          setHintTimeout(stepEqualsSign, 600);
+        }
+      }
 
-          const resBox = document.getElementById('flower-group-result');
-          if (resBox) {
-            resBox.classList.add('counting-active');
-          }
+      countNextGroup2Flower();
+    }
 
-        } else if (step.action === 'flower-result') {
-          const resBox = document.getElementById('flower-group-result');
-          const resFlowers = resBox ? Array.from(resBox.querySelectorAll('.flower-token')) : [];
-          const flowerEl = resFlowers[step.count - 1];
+    // Step 4: Equals Sign addition instruction
+    function stepEqualsSign() {
+      if (!checkActive()) return;
+
+      document.querySelectorAll('.flower-token.highlighted').forEach(el => {
+        el.classList.remove('highlighted');
+      });
+
+      if (plusElem) {
+        plusElem.classList.remove('symbol-glow', 'highlighted');
+      }
+      if (equalsElem) {
+        equalsElem.classList.add('symbol-glow', 'highlighted');
+      }
+      state.currentStage = 'counting_total';
+      audio.playPop(1);
+
+      // Teacher speaks "Equals" and waits until speech finishes + 500ms pause (matching Activities 2 & 3)
+      teacherVoice.speak("Equals", () => {
+        if (!checkActive()) return;
+        if (equalsElem) {
+          equalsElem.classList.remove('highlighted');
+          equalsElem.classList.add('symbol-glow');
+        }
+        setHintTimeout(stepCountTotal, 500);
+      });
+    }
+
+    // Step 5: Count Combined Total flowers (1..q.answer)
+    function stepCountTotal() {
+      if (!checkActive()) return;
+
+      if (resBox) {
+        resBox.classList.add('counting-active');
+      }
+
+      const resFlowers = resBox ? Array.from(resBox.querySelectorAll('.flower-token')) : [];
+      let totalIdx = 0;
+
+      function countNextTotalFlower() {
+        if (!checkActive()) return;
+
+        document.querySelectorAll('.flower-token.highlighted').forEach(el => {
+          el.classList.remove('highlighted');
+        });
+
+        if (totalIdx < q.answer && totalIdx < resFlowers.length) {
+          const count = totalIdx + 1;
+          const flowerEl = resFlowers[totalIdx];
 
           if (flowerEl) {
-            flowerEl.classList.add('highlighted');
+            flowerEl.classList.add('highlighted', 'counted');
             flowerEl.dataset.counted = 'true';
-            flowerEl.dataset.countOrder = String(step.count);
+            flowerEl.dataset.countOrder = String(count);
             flowerEl.classList.remove('uncounted');
-            flowerEl.classList.add('counted');
 
             const textElem = flowerEl.querySelector('.flower-digit-text');
             if (textElem) {
-              textElem.textContent = step.count;
+              textElem.textContent = count;
               textElem.classList.remove('hidden-digit');
               textElem.classList.add('revealed');
             }
@@ -1716,46 +1976,66 @@
             flowerEl.classList.add('tapped');
           }
 
-          state.boxCounters['flower-group-result'] = step.count;
-          audio.playPop(step.count);
-          teacherVoice.countFlower(step.count);
+          state.boxCounters['flower-group-result'] = count;
+          audio.playPop(count);
 
-        } else if (step.action === 'complete-total') {
-          stopCountingHint();
-
-          const resBox = document.getElementById('flower-group-result');
-          if (resBox) {
-            resBox.classList.remove('counting-active');
-            resBox.classList.add('box-completed');
-          }
-
-          const equalsElem = document.querySelector('.math-equals-symbol');
-          if (equalsElem) {
-            equalsElem.classList.remove('symbol-glow');
-          }
-
-          state.currentStage = 'total_announced';
-          state.hasAnnouncedTotal = true;
-
-          triggerTotalAnnouncement(() => {
-            // Highlight matching answer button gently to invite selection
-            const answerBtns = document.querySelectorAll('.flower-answer-buttons .flower-btn');
-            answerBtns.forEach(btn => {
-              if (parseInt(btn.dataset.value, 10) === q.answer) {
-                btn.style.filter = 'drop-shadow(0 0 20px rgba(245, 158, 11, 0.95))';
-                setTimeout(() => {
-                  btn.style.filter = '';
-                }, 3500);
-              }
-            });
+          // Teacher speaks each total flower number slowly & clearly, waiting for speech to finish + 600ms pause
+          teacherVoice.countFlower(count, () => {
+            if (!checkActive()) return;
+            totalIdx++;
+            if (totalIdx < q.answer && totalIdx < resFlowers.length) {
+              setHintTimeout(countNextTotalFlower, 600);
+            } else {
+              setHintTimeout(stepCompleteTotal, 700);
+            }
           });
+        } else {
+          setHintTimeout(stepCompleteTotal, 700);
         }
-
-        stepIndex++;
-      } else {
-        stopCountingHint();
       }
-    }, 720);
+
+      countNextTotalFlower();
+    }
+
+    // Step 6: Complete Total Counting & Announce Final Total
+    function stepCompleteTotal() {
+      if (!checkActive()) return;
+
+      document.querySelectorAll('.flower-token.highlighted').forEach(el => {
+        el.classList.remove('highlighted');
+      });
+
+      if (resBox) {
+        resBox.classList.remove('counting-active');
+        resBox.classList.add('box-completed');
+      }
+      if (equalsElem) {
+        equalsElem.classList.remove('symbol-glow', 'highlighted');
+      }
+
+      state.currentStage = 'total_announced';
+      state.hasAnnouncedTotal = true;
+
+      triggerTotalAnnouncement(() => {
+        // Highlight matching answer button gently to invite selection
+        const answerBtns = document.querySelectorAll('.flower-answer-buttons .flower-btn');
+        answerBtns.forEach(btn => {
+          if (parseInt(btn.dataset.value, 10) === q.answer) {
+            btn.style.filter = 'drop-shadow(0 0 20px rgba(245, 158, 11, 0.95))';
+            setTimeout(() => {
+              btn.style.filter = '';
+            }, 3500);
+          }
+        });
+        state.isCountingHintActive = false;
+        if (hintBtn) {
+          hintBtn.classList.remove('hint-active');
+        }
+      });
+    }
+
+    // Begin with Group 1
+    countNextGroup1Flower();
   }
 
   // --- Next Question Action ---
@@ -1931,9 +2211,14 @@
           e.stopPropagation();
           closeDropdown();
 
-          if (flowerActivityContainer) {
-            flowerActivityContainer.style.display = '';
-            flowerActivityContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          if (typeof window.TenaliSwitchToActivity === 'function') {
+            window.TenaliSwitchToActivity(1, true);
+          } else {
+            if (flowerActivityContainer) {
+              flowerActivityContainer.style.display = '';
+              flowerActivityContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            resetRoundCounting(true);
           }
         });
       }
@@ -2087,6 +2372,11 @@
     state.currentQuestion = generateQuestion();
     renderQuestion();
     updateVoiceTogglesUI();
+
+    // Export helpers for clean multi-activity switching and reset
+    window.TenaliResetActivity1RoundCounting = (silent = true) => resetRoundCounting(silent);
+    window.TenaliState1 = state;
+    window.TenaliRenderQuestion1 = renderQuestion;
   }
 
   // Start when DOM is ready
