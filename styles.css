@@ -2301,3 +2301,330 @@ body {
     min-height: 68px;
   }
 }
+
+/* ==========================================================================
+   ACTIVITY 0: CORAL FLOWER ADDITION CARD
+   Reproduces reference image artwork: coral-red flower with heart-shaped petals,
+   dark red outlines, golden-yellow center, and soft mint-green container backgrounds.
+   ========================================================================== */
+.activity-0-card {
+  position: relative;
+  padding: 18px 24px 32px 24px;
+}
+
+.activity-0-card .act0-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  min-height: 34px;
+  margin-bottom: 8px;
+}
+
+.activity-0-card .act0-top-bar .activity-count-again-btn {
+  position: static;
+}
+
+.activity-0-card .flower-equation-wrapper {
+  margin: 4px 0 24px 0;
+}
+
+.activity-0-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #f85656 0%, #ffd54f 50%, #48bb78 100%);
+}
+
+.activity-0-card .flower-group-box {
+  background-color: #edf7f2; /* Light mint-green background from reference image */
+  border: 3px dashed #a3d9c9;
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  min-height: 165px;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  gap: 10px;
+  transition: all 0.25s ease;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.activity-0-card .flower-group-box:hover {
+  background-color: #e5f4ec;
+  border-color: #7bc4af;
+}
+
+.activity-0-card .flower-combined-group-box {
+  background-color: #e8f6ef;
+  border: 3.5px dashed #2e8b57;
+  box-shadow: inset 0 0 14px rgba(46, 139, 87, 0.08);
+}
+
+.activity-0-card .flower-combined-group-box:hover {
+  background-color: #dff1e8;
+  border-color: #246b43;
+}
+
+.activity-0-card .flower-group-box.counting-active {
+  border-color: #f59e0b;
+  background-color: #fffdf5;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.28);
+}
+
+.activity-0-card .flower-group-box.box-completed {
+  border-color: #22c55e;
+  background-color: #f0fbf4;
+}
+
+.activity-0-card .coral-flower-svg {
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+}
+
+.activity-0-card .flower-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.activity-0-card .flower-token:hover:not(.revealed) {
+  transform: scale(1.08) translateY(-2px);
+}
+
+.activity-0-card .flower-token:active {
+  transform: scale(0.95);
+}
+
+.activity-0-card .flower-token.tapped,
+.activity-0-card .flower-token.revealed {
+  animation: act0-flower-pop 0.35s ease-out;
+}
+
+@keyframes act0-flower-pop {
+  0% { transform: scale(0.92); }
+  50% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+.activity-0-card .flower-token.highlighted {
+  animation: act0-flower-glow 1s infinite alternate;
+}
+
+@keyframes act0-flower-glow {
+  0% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.85));
+  }
+  100% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 22px rgba(245, 158, 11, 1));
+  }
+}
+
+.activity-0-card .flower-answer-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.activity-0-card .flower-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.22s ease;
+}
+
+.activity-0-card .flower-btn:hover:not(:disabled) {
+  transform: translateY(-4px) scale(1.08);
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.20));
+}
+
+.activity-0-card .flower-btn:active:not(:disabled) {
+  transform: scale(0.96) translateY(2px);
+}
+
+.activity-0-card .flower-btn.ready-pulse {
+  animation: act0-btn-pulse 2s infinite ease-in-out;
+}
+
+@keyframes act0-btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+.activity-0-card .flower-btn.answer-correct {
+  animation: answer-celebrate 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  filter: drop-shadow(0 0 24px rgba(34, 197, 94, 0.95)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+}
+
+.activity-0-card .flower-btn.answer-incorrect {
+  animation: gentle-wobble 0.5s ease-in-out;
+  filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.7));
+}
+
+.activity-0-card .flower-btn:disabled,
+.activity-0-card .flower-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08)) grayscale(20%);
+  transform: none !important;
+}
+
+.activity-0-card .flower-btn.unlocked {
+  animation: answer-btn-unlock 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Activity 0 Answer-Option Flowers & Digits Precision & Stability */
+.activity-0-card .flower-btn .answer-flower-digit-text,
+.activity-0-card .flower-btn .act0-answer-digit,
+.activity-0-card .flower-btn .flower-digit-text {
+  font-family: 'Fredoka', 'Quicksand', 'Nunito', sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 26px !important;
+  text-anchor: middle !important;
+  dominant-baseline: central !important;
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
+  transform-origin: 0 0 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  opacity: 1 !important;
+}
+
+.activity-0-card .coral-flower-svg {
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+}
+
+.activity-0-card .flower-btn .coral-flower-svg {
+  transition: filter 0.22s ease !important;
+}
+
+.coral-flower-svg .flower-digit-text {
+  transform-origin: 0 0 !important;
+}
+
+/* Activity 0 Answer Feedback & Play Next Round Button (Matching Reference Screenshot) */
+.activity-0-card .feedback-ribbon {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 14px;
+  transition: all 0.3s ease;
+  flex-wrap: wrap;
+}
+
+.activity-0-card .feedback-msg.success {
+  background-color: #dcfce7;
+  border: 1.5px solid #86efac;
+  color: #16a34a;
+  border-radius: 9999px;
+  padding: 10px 24px;
+  font-size: 19px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.08);
+  animation: slide-fade-in 0.35s ease-out;
+  white-space: nowrap;
+}
+
+.activity-0-card .feedback-msg.success .feedback-icon {
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.activity-0-card .feedback-msg.try-again {
+  background-color: var(--feedback-gentle-bg);
+  color: #b45309;
+  border: 1px solid #fde047;
+  border-radius: 9999px;
+  padding: 8px 22px;
+  font-size: 19px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  animation: slide-fade-in 0.3s ease-out;
+}
+
+.activity-0-card .next-question-btn,
+.activity-0-card .act0-next-round-btn {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 11px 32px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(240, 99, 16, 0.35);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: pop-appear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+}
+
+.activity-0-card .next-question-btn:hover,
+.activity-0-card .act0-next-round-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 8px 24px rgba(240, 99, 16, 0.5);
+}
+
+.activity-0-card .next-question-btn:active,
+.activity-0-card .act0-next-round-btn:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 640px) {
+  .activity-0-card .feedback-ribbon {
+    gap: 12px;
+  }
+  .activity-0-card .feedback-msg.success,
+  .activity-0-card .feedback-msg.try-again {
+    white-space: normal;
+    text-align: center;
+    padding: 8px 18px;
+    font-size: 16px;
+    border-radius: 24px;
+  }
+  .activity-0-card .next-question-btn,
+  .activity-0-card .act0-next-round-btn {
+    font-size: 16px;
+    padding: 10px 24px;
+  }
+}
+

@@ -2430,6 +2430,13 @@
   // ACTIVITY 3 SWITCHER & INITIALIZATION
   // =========================================================================
   function switchToActivity3Internal(shouldScroll = true) {
+    const card0 = document.getElementById('activity-0-container');
+    if (card0) card0.style.display = 'none';
+    const item0 = document.getElementById('activity-0-item');
+    if (item0) item0.classList.remove('active');
+    if (typeof window.TenaliStopCountingHint0 === 'function') window.TenaliStopCountingHint0();
+    if (typeof window.TenaliResetActivity0RoundCounting === 'function') window.TenaliResetActivity0RoundCounting(true);
+
     if (!mergeState.currentQuestion) {
       if (!restoreMergeProgress()) {
         mergeState.currentQuestion = generateMergeQuestion();

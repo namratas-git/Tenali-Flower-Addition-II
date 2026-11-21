@@ -109,6 +109,10 @@
             <span class="activities-chevron" aria-hidden="true">▼</span>
           </button>
           <div class="activities-dropdown-menu" id="activities-dropdown-menu" role="menu" aria-label="Activities">
+            <button type="button" class="activity-dropdown-item" id="activity-0-item" role="menuitem" data-activity="0">
+              <span class="activity-item-icon">🪷</span>
+              <span class="activity-item-title">Activity 0</span>
+            </button>
             <button type="button" class="activity-dropdown-item active" id="activity-1-item" role="menuitem" data-activity="1">
               <span class="activity-item-icon">🌸</span>
               <span class="activity-item-title">Activity 1</span>
@@ -129,6 +133,87 @@
       <div class="activity-section-header">
         <h2 class="activity-section-title" id="activity-section-title">Activity 1</h2>
       </div>
+
+      <!-- ===================================================================
+           ACTIVITY 0: CORAL FLOWER ADDITION CARD
+           Primary Artwork: Coral-red flowers with heart-shaped petals,
+           dark red outlines, circular golden-yellow centres with amber border.
+           =================================================================== -->
+      <section class="flower-activity-card activity-0-card" id="activity-0-container" aria-label="Activity 0: Coral Flower Addition Activity" style="display: none;">
+        
+        <!-- Top Controls: Single "Count Again" Button on the Right -->
+        <div class="act0-top-bar">
+          <button type="button" class="activity-count-again-btn" id="btn-act0-count-again" title="Start counting this round again" aria-label="Count this round again">
+            <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
+              <path d="M2 3v6h6"/>
+            </svg>
+            <span>Count Again</span>
+          </button>
+        </div>
+
+        <!-- ===============================================================
+             VISUAL ADDITION EQUATION:
+             [First Group] + [Second Group] = [Combined Total]
+             =============================================================== -->
+        <div class="flower-equation-wrapper" id="act0-flower-equation-wrapper">
+          
+          <!-- First Flower Group Container -->
+          <div class="flower-group-container" id="act0-container-group-1">
+            <div class="group-header-tag">First Group</div>
+            <div class="flower-group-box" id="act0-flower-group-1" title="First flower group - tap any flower to start counting!">
+              <!-- Injected by activity0.js -->
+            </div>
+          </div>
+
+          <!-- Chunky Orange Plus Sign -->
+          <div class="math-operator-symbol math-plus-symbol" id="act0-plus-symbol" aria-hidden="true">+</div>
+
+          <!-- Second Flower Group Container -->
+          <div class="flower-group-container" id="act0-container-group-2">
+            <div class="group-header-tag">Second Group</div>
+            <div class="flower-group-box" id="act0-flower-group-2" title="Second flower group - tap any flower to start counting!">
+              <!-- Injected by activity0.js -->
+            </div>
+          </div>
+
+          <!-- Chunky Orange Equals Sign -->
+          <div class="math-operator-symbol math-equals-symbol" id="act0-equals-symbol" aria-hidden="true">=</div>
+
+          <!-- Combined Result Group Container -->
+          <div class="flower-group-container flower-result-container" id="act0-container-group-result">
+            <div class="group-header-tag result-tag">Combined Total</div>
+            <div class="flower-group-box flower-combined-group-box" id="act0-flower-group-result" title="Combined flower group - tap any flower to start counting!">
+              <!-- Injected by activity0.js -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Answer Section with Three Coral Flower-Shaped Buttons -->
+        <div class="answer-stage-container" id="act0-answer-stage-container">
+          <div class="answer-prompt-text" id="act0-answer-prompt-text">
+            👉 Look at the flowers! Tap the flower showing the total:
+          </div>
+
+          <div class="flower-answer-buttons" id="act0-flower-answer-buttons">
+            <!-- Injected by activity0.js: 3 coral flower buttons -->
+          </div>
+        </div>
+
+        <!-- Interactive Cheerful Feedback & Next Question Button -->
+        <div class="feedback-ribbon" id="act0-feedback-ribbon" aria-live="polite">
+          <!-- Populated when user selects an answer -->
+        </div>
+
+        <!-- Activity Helpers Toolbar -->
+        <div class="activity-helpers-bar">
+          <button id="btn-act0-count-hint" class="helper-action-btn" title="Light up flowers one by one across the equation">
+            💡 Count with Me
+          </button>
+        </div>
+
+      </section>
 
       <!-- ===================================================================
            THE WHITE ACTIVITY CARD (Flower Addition II Design)
@@ -529,6 +614,7 @@
     </div>
   </div>
 
+  <script src="activity0.js?v=1.0"></script>
   <script src="game.js?v=2.2"></script>
   <script src="activity2.js?v=2.6"></script>
   <script src="activity3.js?v=1.0"></script>

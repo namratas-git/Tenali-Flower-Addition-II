@@ -2568,11 +2568,13 @@
   function setupActivitiesNavigation() {
     const dropdownWrapper = document.getElementById('activities-dropdown-wrapper');
     const dropdownBtn = document.getElementById('activities-dropdown-btn');
+    const item0 = document.getElementById('activity-0-item');
     const item1 = document.getElementById('activity-1-item');
     const item2 = document.getElementById('activity-2-item');
     const item3 = document.getElementById('activity-3-item');
     const headerTitle = document.getElementById('activity-section-title');
 
+    const card0 = document.getElementById('activity-0-container');
     const card1 = document.getElementById('flower-activity-container');
     const card2 = document.getElementById('flower-merge-activity-container');
     const card3 = document.getElementById('flower-merge-3-activity-container');
@@ -2586,17 +2588,19 @@
 
     function switchToActivity(actNum, shouldScroll = true) {
       closeDropdown();
-      const actKey = actNum === 3 ? 'activity3' : (actNum === 2 ? 'activity2' : 'activity1');
+      const actKey = actNum === 3 ? 'activity3' : (actNum === 2 ? 'activity2' : (actNum === 0 ? 'activity0' : 'activity1'));
       window.TenaliActiveActivity = actKey;
       safeSetItem(STORAGE_KEY_ACTIVITY, actKey);
 
-      if (actNum === 1) {
-        if (headerTitle) headerTitle.textContent = 'Activity 1';
-        if (card1) card1.style.display = '';
+      if (actNum === 0) {
+        if (headerTitle) headerTitle.textContent = 'Activity 0';
+        if (card0) card0.style.display = '';
+        if (card1) card1.style.display = 'none';
         if (card2) card2.style.display = 'none';
         if (card3) card3.style.display = 'none';
 
-        if (item1) item1.classList.add('active');
+        if (item0) item0.classList.add('active');
+        if (item1) item1.classList.remove('active');
         if (item2) item2.classList.remove('active');
         if (item3) item3.classList.remove('active');
 
@@ -2614,16 +2618,55 @@
           window.TenaliResetActivity1RoundCounting(true);
         }
 
+        if (typeof window.TenaliSwitchToActivity0 === 'function') {
+          window.TenaliSwitchToActivity0(shouldScroll);
+        } else if (shouldScroll && card0 && typeof card0.scrollIntoView === 'function') {
+          card0.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } else if (actNum === 1) {
+        if (headerTitle) headerTitle.textContent = 'Activity 1';
+        if (card0) card0.style.display = 'none';
+        if (card1) card1.style.display = '';
+        if (card2) card2.style.display = 'none';
+        if (card3) card3.style.display = 'none';
+
+        if (item0) item0.classList.remove('active');
+        if (item1) item1.classList.add('active');
+        if (item2) item2.classList.remove('active');
+        if (item3) item3.classList.remove('active');
+
+        clearTimers();
+        if (typeof window.TenaliCancelActivity3Timers === 'function') {
+          window.TenaliCancelActivity3Timers();
+        }
+        if (typeof window.TenaliStopMergeCountingHint === 'function') {
+          window.TenaliStopMergeCountingHint();
+        }
+        if (typeof window.TenaliStopMergeCountingHint3 === 'function') {
+          window.TenaliStopMergeCountingHint3();
+        }
+        if (typeof window.TenaliStopCountingHint0 === 'function') {
+          window.TenaliStopCountingHint0();
+        }
+        if (typeof window.TenaliResetActivity0RoundCounting === 'function') {
+          window.TenaliResetActivity0RoundCounting(true);
+        }
+        if (typeof window.TenaliResetActivity1RoundCounting === 'function') {
+          window.TenaliResetActivity1RoundCounting(true);
+        }
+
         // Scroll into view
         if (shouldScroll && card1 && typeof card1.scrollIntoView === 'function') {
           card1.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       } else if (actNum === 2) {
         if (headerTitle) headerTitle.textContent = 'Activity 2';
+        if (card0) card0.style.display = 'none';
         if (card1) card1.style.display = 'none';
         if (card2) card2.style.display = 'flex';
         if (card3) card3.style.display = 'none';
 
+        if (item0) item0.classList.remove('active');
         if (item1) item1.classList.remove('active');
         if (item2) item2.classList.add('active');
         if (item3) item3.classList.remove('active');
@@ -2634,6 +2677,12 @@
         }
         if (typeof window.TenaliStopMergeCountingHint3 === 'function') {
           window.TenaliStopMergeCountingHint3();
+        }
+        if (typeof window.TenaliStopCountingHint0 === 'function') {
+          window.TenaliStopCountingHint0();
+        }
+        if (typeof window.TenaliResetActivity0RoundCounting === 'function') {
+          window.TenaliResetActivity0RoundCounting(true);
         }
         if (typeof window.TenaliResetActivity1RoundCounting === 'function') {
           window.TenaliResetActivity1RoundCounting(true);
@@ -2658,10 +2707,12 @@
         }
       } else if (actNum === 3) {
         if (headerTitle) headerTitle.textContent = 'Activity 3';
+        if (card0) card0.style.display = 'none';
         if (card1) card1.style.display = 'none';
         if (card2) card2.style.display = 'none';
         if (card3) card3.style.display = 'flex';
 
+        if (item0) item0.classList.remove('active');
         if (item1) item1.classList.remove('active');
         if (item2) item2.classList.remove('active');
         if (item3) item3.classList.add('active');
@@ -2669,6 +2720,12 @@
         clearTimers();
         if (typeof window.TenaliStopMergeCountingHint === 'function') {
           window.TenaliStopMergeCountingHint();
+        }
+        if (typeof window.TenaliStopCountingHint0 === 'function') {
+          window.TenaliStopCountingHint0();
+        }
+        if (typeof window.TenaliResetActivity0RoundCounting === 'function') {
+          window.TenaliResetActivity0RoundCounting(true);
         }
         if (typeof window.TenaliResetActivity1RoundCounting === 'function') {
           window.TenaliResetActivity1RoundCounting(true);
@@ -2680,6 +2737,14 @@
           card3.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       }
+    }
+
+    if (item0) {
+      item0.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        switchToActivity(0, true);
+      });
     }
 
     if (item1) {
@@ -2793,7 +2858,9 @@
     const switcher = setupActivitiesNavigation();
     window.TenaliSwitchToActivity = switcher;
     const savedAct = safeGetItem(STORAGE_KEY_ACTIVITY);
-    if (savedAct === 'activity2' && switcher) {
+    if (savedAct === 'activity0' && switcher) {
+      switcher(0, false);
+    } else if (savedAct === 'activity2' && switcher) {
       switcher(2, false);
     } else if (savedAct === 'activity3' && switcher) {
       switcher(3, false);
