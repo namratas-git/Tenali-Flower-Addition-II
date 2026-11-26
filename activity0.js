@@ -670,17 +670,7 @@
     }
 
     celebrateCorrect(num1, num2, total, onEnd = null) {
-      if (total === undefined && state0.currentQuestion) {
-        total = state0.currentQuestion.answer;
-        num1 = state0.currentQuestion.num1;
-        num2 = state0.currentQuestion.num2;
-      }
-      const w1 = this.getWord(num1);
-      const cap1 = w1.charAt(0).toUpperCase() + w1.slice(1);
-      const w2 = this.getWord(num2);
-      const wAns = this.getWord(total);
-      const text = `Excellent! ${cap1} plus ${w2} is ${wAns}. Good job!`;
-      this.speak(text, onEnd);
+      this.speak('Excellent!', onEnd);
     }
 
     encourageTryAgain(onEnd = null) {
@@ -853,6 +843,250 @@
   }
 
   // =========================================================================
+  // TEACHER HAND CONTROLLER (Visual Guide for Preschool Children)
+  // Shows children exactly where to tap and guides them while counting.
+  // =========================================================================
+  class TeacherHand0 {
+    constructor() {
+      this.handEl = null;
+      this.cardEl = null;
+      this.currentTarget = null;
+      this.isVisible = false;
+      this.repositionHandler = () => this.updatePosition();
+      this.boundVisibilityHandler = null;
+    }
+
+    init() {
+      this.handEl = document.getElementById('act0-teacher-hand');
+      this.cardEl = document.getElementById('activity-0-container');
+
+      if (typeof window.removeEventListener === 'function') {
+        window.removeEventListener('resize', this.repositionHandler);
+        window.addEventListener('resize', this.repositionHandler);
+        window.removeEventListener('orientationchange', this.repositionHandler);
+        window.addEventListener('orientationchange', this.repositionHandler);
+      }
+
+      // Observe visibility changes of Activity 0 card
+      if (typeof window.MutationObserver === 'function' && this.cardEl && !this.boundVisibilityHandler) {
+        this.boundVisibilityHandler = new window.MutationObserver(() => {
+          if (this.isActivity0Active()) {
+            if (this.isVisible && this.currentTarget) {
+              this.updatePosition();
+            } else if (!this.isVisible) {
+              this.pointToNextTarget();
+            }
+          } else {
+            this.hide();
+          }
+        });
+        this.boundVisibilityHandler.observe(this.cardEl, { attributes: true, attributeFilter: ['style', 'class'] });
+      }
+    }
+
+    isActivity0Active() {
+      if (!this.cardEl) return false;
+      if (this.cardEl.style.display === 'none') return false;
+      if (window.TenaliActiveActivity && window.TenaliActiveActivity !== 'activity0') return false;
+      return true;
+    }
+
+    show() {
+      if (!this.handEl) this.init();
+      if (!this.handEl) return;
+      this.isVisible = true;
+      if (this.handEl.classList) this.handEl.classList.add('visible');
+    }
+
+    hide() {
+      if (!this.handEl) return;
+      this.isVisible = false;
+      if (this.handEl.classList) this.handEl.classList.remove('visible');
+    }
+
+    pointTo(targetEl) {
+      if (!targetEl) {
+        this.hide();
+        return;
+      }
+      if (!this.handEl) this.init();
+      if (!this.handEl || !this.cardEl) return;
+
+      if (!this.isActivity0Active()) {
+        this.hide();
+        return;
+      }
+
+      this.currentTarget = targetEl;
+      this.show();
+      this.updatePosition();
+    }
+
+    updatePosition() {
+      if (!this.isVisible || !this.currentTarget || !this.handEl || !this.cardEl) return;
+      if (!this.isActivity0Active()) {
+        this.hide();
+        return;
+      }
+
+      if (document.body && typeof document.body.contains === 'function' && !document.body.contains(this.currentTarget)) {
+        return;
+      }
+      if (this.currentTarget.offsetParent === null && this.currentTarget.style && this.currentTarget.style.display === 'none') {
+        return;
+      }
+
+      const cardRect = (typeof this.cardEl.getBoundingClientRect === 'function')
+        ? this.cardEl.getBoundingClientRect()
+        : { left: 0, top: 0, width: 600, height: 600 };
+      const targetRect = (typeof this.currentTarget.getBoundingClientRect === 'function')
+        ? this.currentTarget.getBoundingClientRect()
+        : { left: 100, top: 100, width: 60, height: 60, bottom: 160 };
+
+      if (cardRect.width === 0 || targetRect.width === 0) return;
+
+      const handWidth = this.handEl.offsetWidth || 58;
+      // Index finger tip apex is at ~35% from left of the hand graphic
+      const fingerTipOffset = handWidth * 0.35;
+
+      const targetCenterX = targetRect.left + (targetRect.width / 2);
+      let left = (targetCenterX - cardRect.left) - fingerTipOffset;
+
+      // Keep within card bounds with comfortable padding
+      const maxLeft = (this.cardEl.clientWidth || cardRect.width || 600) - handWidth - 8;
+      if (left < 8) left = 8;
+      if (left > maxLeft) left = maxLeft;
+
+      // Position directly below target with gentle gap so flowers and buttons remain 100% visible
+      const top = (targetRect.bottom - cardRect.top) + 6;
+      const handHeight = this.handEl.offsetHeight || 66;
+      const cardHeight = this.cardEl.clientHeight || cardRect.height || 600;
+      const maxTop = cardHeight - handHeight - 6;
+      const finalTop = (maxTop > 0 && top > maxTop) ? maxTop : top;
+
+      this.handEl.style.left = `${Math.round(left)}px`;
+      this.handEl.style.top = `${Math.round(finalTop)}px`;
+    }
+
+    pointToNextTarget() {
+      if (!this.isActivity0Active()) {
+        this.hide();
+        return;
+      }
+
+      const q = state0.currentQuestion;
+      if (!q) {
+        this.hide();
+        return;
+      }
+
+      const getAnswerButton = (val) => {
+        const answerBox = document.getElementById('act0-flower-answer-buttons');
+        if (answerBox) {
+          if (answerBox.children) {
+            for (const btn of answerBox.children) {
+              if (btn.dataset && String(btn.dataset.value) === String(val)) return btn;
+            }
+          }
+          if (typeof answerBox.querySelector === 'function') {
+            const btn = answerBox.querySelector(`.flower-btn[data-value="${val}"]`);
+            if (btn) return btn;
+          }
+        }
+        if (typeof document.querySelector === 'function') {
+          return document.querySelector(`#act0-flower-answer-buttons .flower-btn[data-value="${val}"]`);
+        }
+        return null;
+      };
+
+      // Step 4 (after answer selected): point to Play Next Round button
+      if (state0.isAnswerSelected) {
+        const nextBtn = document.getElementById('act0-btn-next-question');
+        if (nextBtn && nextBtn.offsetParent !== null) {
+          this.pointTo(nextBtn);
+          return;
+        }
+      }
+
+      // Step 0: Play Next Round button if feedback ribbon is visible
+      const nextBtn = document.getElementById('act0-btn-next-question');
+      if (nextBtn && nextBtn.offsetParent !== null) {
+        this.pointTo(nextBtn);
+        return;
+      }
+
+      // Step 1: If answer selection is enabled, point to correct answer flower button
+      if (state0.isAnswerSelectionEnabled) {
+        const correctBtn = getAnswerButton(q.answer);
+        if (correctBtn && correctBtn.offsetParent !== null) {
+          this.pointTo(correctBtn);
+          return;
+        }
+      }
+
+      // Step 2: First Group flowers (sequential)
+      if (state0.currentStage === 'counting_g1') {
+        const box1 = document.getElementById('act0-flower-group-1');
+        if (box1 && typeof box1.querySelector === 'function') {
+          const nextFlower = box1.querySelector('.flower-token[data-counted="false"]');
+          if (nextFlower) {
+            this.pointTo(nextFlower);
+            return;
+          }
+        }
+      }
+
+      // Step 3: Second Group flowers (sequential)
+      if (state0.currentStage === 'counting_g2') {
+        const box2 = document.getElementById('act0-flower-group-2');
+        if (box2 && typeof box2.querySelector === 'function') {
+          const nextFlower = box2.querySelector('.flower-token[data-counted="false"]');
+          if (nextFlower) {
+            this.pointTo(nextFlower);
+            return;
+          }
+        }
+      }
+
+      // Step 4: After total counted / during announcement before answer buttons enable:
+      if (state0.currentStage === 'total_announced' || state0.hasAnnouncedTotal) {
+        const correctBtn = getAnswerButton(q.answer);
+        if (correctBtn && correctBtn.offsetParent !== null && !correctBtn.disabled) {
+          this.pointTo(correctBtn);
+          return;
+        }
+        // During total announcement, do not cover the Answer Box flowers
+        this.hide();
+        return;
+      }
+
+      // Fallback checks across addend boxes in order
+      const box1 = document.getElementById('act0-flower-group-1');
+      const uncounted1 = (box1 && typeof box1.querySelector === 'function') ? box1.querySelector('.flower-token[data-counted="false"]') : null;
+      if (uncounted1) {
+        this.pointTo(uncounted1);
+        return;
+      }
+
+      const box2 = document.getElementById('act0-flower-group-2');
+      const uncounted2 = (box2 && typeof box2.querySelector === 'function') ? box2.querySelector('.flower-token[data-counted="false"]') : null;
+      if (uncounted2) {
+        this.pointTo(uncounted2);
+        return;
+      }
+
+      // Final fallback: correct answer button
+      const correctBtn = getAnswerButton(q.answer);
+      if (correctBtn && correctBtn.offsetParent !== null) {
+        this.pointTo(correctBtn);
+        return;
+      }
+
+      this.hide();
+    }
+  }
+
+  // =========================================================================
   // GAME STATE & TIMERS
   // =========================================================================
   const state0 = {
@@ -867,6 +1101,7 @@
       'act0-flower-group-result': 0
     },
     isCountingHintActive: false,
+    isTapLocked: false,
     hasAnnouncedTotal: false,
     isAnswerSelected: false,
     isAnswerSelectionEnabled: false,
@@ -876,6 +1111,7 @@
   const audio0 = new AudioSynth0();
   const teacherVoice0 = new TeacherVoice0();
   const scheduler0 = new QuestionScheduler0();
+  const teacherHand0 = new TeacherHand0();
 
   let hintTimers0 = [];
   function setHintTimeout0(fn, delay) {
@@ -886,6 +1122,42 @@
   function clearHintTimers0() {
     hintTimers0.forEach(id => clearTimeout(id));
     hintTimers0 = [];
+  }
+
+  function spawnAnswerBoxFlower0(seqNumber) {
+    const resBox = document.getElementById('act0-flower-group-result');
+    if (!resBox) return null;
+
+    // Prevent duplicate flowers
+    const existing = resBox.querySelector(`[data-count-order="${seqNumber}"]`);
+    if (existing) return existing;
+
+    const q = state0.currentQuestion;
+    const totalFlowers = q ? q.answer : 4;
+    const flowerSizeClass = totalFlowers <= 4 ? 'size-lg' : (totalFlowers <= 6 ? 'size-md' : 'size-sm');
+    const flowerPixelSize = totalFlowers <= 4 ? 78 : (totalFlowers <= 6 ? 66 : 56);
+
+    const flowerDiv = document.createElement('div');
+    flowerDiv.className = `flower-token ${flowerSizeClass} tapped revealed act0-spawn-pop`;
+    flowerDiv.dataset.box = 'act0-flower-group-result';
+    flowerDiv.dataset.counted = 'true';
+    flowerDiv.dataset.countOrder = String(seqNumber);
+    flowerDiv.innerHTML = createCoralFlowerSVG({
+      number: seqNumber,
+      size: flowerPixelSize,
+      hideNumber: false
+    });
+
+    flowerDiv.addEventListener('click', () => {
+      handleFlowerTap0(flowerDiv, 'act0-flower-group-result');
+    });
+
+    resBox.appendChild(flowerDiv);
+    return flowerDiv;
+  }
+
+  function revealAnswerBoxFlowerNumber0(seqNumber) {
+    return spawnAnswerBoxFlower0(seqNumber);
   }
 
   // =========================================================================
@@ -1057,27 +1329,11 @@
       }
     }
 
-    // 3. Combined Total Box (Answer Box): Displays individual flowers from the beginning!
+    // 3. Combined Total Box (Answer Box): Starts completely empty!
+    // Flowers appear dynamically, one at a time, only as child counts flowers in Group 1 and Group 2.
     if (resBox) {
       resBox.innerHTML = '';
       resBox.classList.remove('box-completed', 'counting-active', 'box-attention');
-      for (let i = 1; i <= q.answer; i++) {
-        const flowerDiv = document.createElement('div');
-        flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-        flowerDiv.dataset.box = 'act0-flower-group-result';
-        flowerDiv.dataset.counted = 'false';
-        flowerDiv.innerHTML = createCoralFlowerSVG({
-          number: '',
-          size: flowerPixelSize,
-          hideNumber: true
-        });
-
-        flowerDiv.addEventListener('click', () => {
-          handleFlowerTap0(flowerDiv, 'act0-flower-group-result');
-        });
-
-        resBox.appendChild(flowerDiv);
-      }
     }
 
     // 4. Answer Buttons (3 flower buttons, start disabled & half-hidden)
@@ -1118,6 +1374,11 @@
     }
 
     updateLevelBadge0();
+
+    // Position teacher hand on first target with layout delay
+    setTimeout(() => {
+      teacherHand0.pointToNextTarget();
+    }, 60);
   }
 
   // =========================================================================
@@ -1125,12 +1386,25 @@
   // Sequence: Group 1 -> Group 2 -> Combined Total -> Answer Selection
   // =========================================================================
   function handleFlowerTap0(flowerEl, boxId) {
-    if (state0.isCountingHintActive || state0.isAnswerSelected) return;
+    if (state0.isCountingHintActive || state0.isAnswerSelected || state0.isTapLocked) return;
 
     const q = state0.currentQuestion;
     if (!q) return;
 
-    // Check if tapping in the correct sequence stage
+    // Numbers appear ONLY when tapping corresponding flowers in either group on the left.
+    // Direct taps on Answer Box flowers do not reveal numbers or change sequence.
+    if (boxId === 'act0-flower-group-result') {
+      if (flowerEl.dataset.counted === 'true') {
+        const existingCount = parseInt(flowerEl.dataset.countOrder, 10);
+        if (existingCount) {
+          audio0.playPop(existingCount);
+        }
+      }
+      return;
+    }
+
+    // Check if tapping in the correct sequence stage:
+    // If tapping Group 2 before Group 1 is finished, nudge to Group 1
     if (boxId === 'act0-flower-group-2' && state0.currentStage === 'counting_g1') {
       const box1 = document.getElementById('act0-flower-group-1');
       if (box1) {
@@ -1141,17 +1415,7 @@
       return;
     }
 
-    if (boxId === 'act0-flower-group-result' && (state0.currentStage === 'counting_g1' || state0.currentStage === 'counting_g2')) {
-      const activeBox = document.getElementById(state0.currentStage === 'counting_g1' ? 'act0-flower-group-1' : 'act0-flower-group-2');
-      if (activeBox) {
-        activeBox.classList.remove('box-attention');
-        void activeBox.offsetWidth;
-        activeBox.classList.add('box-attention');
-      }
-      return;
-    }
-
-    // Already counted flower
+    // Already counted flower: prevent duplicate taps from revealing duplicate numbers or spawning flowers
     if (flowerEl.dataset.counted === 'true') {
       const existingCount = parseInt(flowerEl.dataset.countOrder, 10);
       if (existingCount) {
@@ -1161,7 +1425,7 @@
       return;
     }
 
-    // First time tapping this flower
+    // First time tapping this flower in Group 1 or Group 2
     const boxEl = document.getElementById(boxId);
     if (!boxEl) return;
 
@@ -1169,16 +1433,39 @@
     state0.boxCounters[boxId] = currentCount;
 
     flowerEl.dataset.counted = 'true';
-    flowerEl.dataset.countOrder = currentCount;
     flowerEl.classList.remove('uncounted');
     flowerEl.classList.add('tapped', 'revealed');
 
-    // In Activity 0, flower centres remain completely blank throughout (no numbers inside flowers)
-    audio0.playPop(currentCount);
-    teacherVoice0.countFlower(currentCount);
+    // Synchronize voice, pop-in animation, and hand movement
+    // Lock taps until speech and animation complete to prevent overlaps
+    state0.isTapLocked = true;
+    let speechFinished = false;
+    let animFinished = false;
 
-    // Check completion of stages
+    const completeTapSequence = () => {
+      state0.isTapLocked = false;
+      teacherHand0.pointToNextTarget();
+    };
+
+    const checkTapDone = () => {
+      if (speechFinished && animFinished) {
+        completeTapSequence();
+      }
+    };
+
+    setTimeout(() => {
+      animFinished = true;
+      checkTapDone();
+    }, 400);
+
+    // 1. First Group counting
     if (boxId === 'act0-flower-group-1') {
+      flowerEl.dataset.countOrder = String(currentCount);
+      audio0.playPop(currentCount);
+
+      // On counting N, flower appears dynamically in Answer Box with number N inside circular centre
+      spawnAnswerBoxFlower0(currentCount);
+
       if (currentCount >= q.num1) {
         boxEl.classList.remove('counting-active');
         boxEl.classList.add('box-completed');
@@ -1189,42 +1476,60 @@
           box2.classList.add('counting-active');
         }
       }
+
+      teacherVoice0.countFlower(currentCount, () => {
+        speechFinished = true;
+        checkTapDone();
+      });
     } else if (boxId === 'act0-flower-group-2') {
+      // 2. Second Group counting continues numbering from where First Group ended
+      const cumulativeCount = q.num1 + currentCount;
+      flowerEl.dataset.countOrder = String(cumulativeCount);
+      audio0.playPop(cumulativeCount);
+
+      // Flower appears dynamically in Answer Box with cumulativeCount inside circular centre
+      spawnAnswerBoxFlower0(cumulativeCount);
+
       if (currentCount >= q.num2) {
         boxEl.classList.remove('counting-active');
         boxEl.classList.add('box-completed');
-        state0.currentStage = 'counting_total';
 
         const resBox = document.getElementById('act0-flower-group-result');
         if (resBox) {
-          resBox.classList.add('counting-active');
+          resBox.classList.add('box-completed');
         }
-      }
-    } else if (boxId === 'act0-flower-group-result') {
-      if (currentCount >= q.answer) {
-        boxEl.classList.remove('counting-active');
-        boxEl.classList.add('box-completed');
+
         state0.currentStage = 'total_announced';
         state0.hasAnnouncedTotal = true;
 
-        // Teacher announces total and answer buttons unlock fully
-        setTimeout(() => {
-          let unlocked = false;
-          function finishAnnouncement() {
-            if (unlocked) return;
-            unlocked = true;
-            setAnswerButtonsEnabled0(true);
-            highlightCorrectAnswerButton0();
-          }
+        teacherVoice0.countFlower(cumulativeCount, () => {
+          speechFinished = true;
+          // Teacher announces total and answer buttons unlock fully
+          setTimeout(() => {
+            let unlocked = false;
+            function finishAnnouncement() {
+              if (unlocked) return;
+              unlocked = true;
+              state0.isTapLocked = false;
+              setAnswerButtonsEnabled0(true);
+              highlightCorrectAnswerButton0();
+              teacherHand0.pointToNextTarget();
+            }
 
-          // Safety fallback timer matching Activities 1, 2, and 3
-          const safetyTimer = setTimeout(finishAnnouncement, 4000);
+            // Safety fallback timer matching Activities 1, 2, and 3
+            const safetyTimer = setTimeout(finishAnnouncement, 4000);
 
-          teacherVoice0.announceTotal(q.answer, () => {
-            clearTimeout(safetyTimer);
-            finishAnnouncement();
-          });
-        }, 350);
+            teacherVoice0.announceTotal(q.answer, () => {
+              clearTimeout(safetyTimer);
+              finishAnnouncement();
+            });
+          }, 350);
+        });
+      } else {
+        teacherVoice0.countFlower(cumulativeCount, () => {
+          speechFinished = true;
+          checkTapDone();
+        });
       }
     }
   }
@@ -1309,14 +1614,14 @@
       updateProgressStars0();
 
       // Show Feedback Ribbon matching reference screenshot:
-      // Mint green pill container: 🌟 Excellent! [num1] + [num2] = [total] Good job!
+      // Mint green pill container: 🌟 Excellent!
       // and Play Next Round button immediately to the right.
       const ribbon = document.getElementById('act0-feedback-ribbon');
       if (ribbon) {
         ribbon.innerHTML = `
           <div class="feedback-msg success">
             <span class="feedback-icon" aria-hidden="true">🌟</span>
-            <span class="feedback-text">Excellent! &nbsp;${q.num1} + ${q.num2} = ${q.answer}&nbsp; Good job!</span>
+            <span class="feedback-text">Excellent!</span>
           </div>
           <button type="button" class="next-question-btn act0-next-round-btn" id="act0-btn-next-question">
             Play Next Round
@@ -1326,6 +1631,7 @@
         const nextBtn = document.getElementById('act0-btn-next-question');
         if (nextBtn) {
           if (typeof nextBtn.focus === 'function') nextBtn.focus();
+          setTimeout(() => teacherHand0.pointTo(nextBtn), 150);
           nextBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (state0.starsEarned >= 10) {
@@ -1367,6 +1673,7 @@
 
       setTimeout(() => {
         btnEl.classList.remove('answer-incorrect');
+        teacherHand0.pointToNextTarget();
       }, 800);
     }
   }
@@ -1386,16 +1693,22 @@
     const titleEl = document.getElementById('modal-complete-title');
     const starsText = document.getElementById('modal-complete-stars-text');
     const descText = document.getElementById('modal-complete-desc-text');
+    const playBtn = document.getElementById('btn-play-again');
 
-    if (titleEl) titleEl.textContent = `Level ${state0.level} Completed!`;
     if (starsText) starsText.textContent = `You earned 10 ⭐ in Level ${state0.level}!`;
-    if (descText) {
-      if (state0.level < 3) {
-        const nextLimit = state0.level === 1 ? '6' : '9';
-        descText.textContent = `Wonderful! 🪷 You can now add numbers to make ${state0.level === 1 ? '4' : '6'}. Ready to learn to make ${nextLimit}?`;
-      } else {
-        descText.textContent = 'Spectacular! 🌟 You mastered all flower addition facts up to 9!';
-      }
+
+    if (state0.level === 1) {
+      if (titleEl) titleEl.textContent = 'Level 1 Completed!';
+      if (descText) descText.textContent = 'Wonderful! 🌺 You can now count numbers till 4. Ready to count till 6?';
+      if (playBtn) playBtn.textContent = 'Start Next Level';
+    } else if (state0.level === 2) {
+      if (titleEl) titleEl.textContent = 'Level 2 Completed!';
+      if (descText) descText.textContent = 'Wonderful! 🌺 You can now count numbers till 6. Ready to count till 9?';
+      if (playBtn) playBtn.textContent = 'Start Next Level';
+    } else {
+      if (titleEl) titleEl.textContent = 'Quest Completed!';
+      if (descText) descText.textContent = 'Wonderful! 🌺 You have completed all three levels. Well done!';
+      if (playBtn) playBtn.textContent = 'Play Again';
     }
 
     modal.classList.add('active');
@@ -1461,39 +1774,11 @@
       });
     }
 
-    // Reset Combined Total Box (Answer Box): Keep flowers visible, reset to uncounted with blank centres
+    // Reset Combined Total Box (Answer Box): Clear all flowers returning to initial empty state
     const resBox = document.getElementById('act0-flower-group-result');
     if (resBox) {
       resBox.classList.remove('box-completed', 'counting-active', 'box-attention');
-      const flowers = resBox.querySelectorAll('.flower-token');
-      if (flowers.length === 0 && state0.currentQuestion) {
-        const q = state0.currentQuestion;
-        const totalFlowers = q.answer;
-        const flowerSizeClass = totalFlowers <= 4 ? 'size-lg' : (totalFlowers <= 6 ? 'size-md' : 'size-sm');
-        const flowerPixelSize = totalFlowers <= 4 ? 78 : (totalFlowers <= 6 ? 66 : 56);
-        for (let i = 1; i <= q.answer; i++) {
-          const flowerDiv = document.createElement('div');
-          flowerDiv.className = `flower-token ${flowerSizeClass} uncounted`;
-          flowerDiv.dataset.box = 'act0-flower-group-result';
-          flowerDiv.dataset.counted = 'false';
-          flowerDiv.innerHTML = createCoralFlowerSVG({
-            number: '',
-            size: flowerPixelSize,
-            hideNumber: true
-          });
-          flowerDiv.addEventListener('click', () => {
-            handleFlowerTap0(flowerDiv, 'act0-flower-group-result');
-          });
-          resBox.appendChild(flowerDiv);
-        }
-      } else {
-        flowers.forEach(f => {
-          f.dataset.counted = 'false';
-          f.dataset.countOrder = '';
-          f.classList.remove('tapped', 'revealed', 'highlighted');
-          f.classList.add('uncounted');
-        });
-      }
+      resBox.innerHTML = '';
     }
 
     // Reset answer buttons to half-hidden/faded and disabled (matching Activities 1, 2, and 3)
@@ -1517,6 +1802,10 @@
     const equalsEl = document.getElementById('act0-equals-symbol');
     if (plusEl) plusEl.classList.remove('symbol-glow', 'highlighted');
     if (equalsEl) equalsEl.classList.remove('symbol-glow', 'highlighted');
+
+    setTimeout(() => {
+      teacherHand0.pointToNextTarget();
+    }, 60);
   }
 
   // =========================================================================
@@ -1532,6 +1821,7 @@
   function stopCountingHint0() {
     clearHintTimers0();
     state0.isCountingHintActive = false;
+    state0.isTapLocked = false;
 
     teacherVoice0.cancel();
 
@@ -1548,6 +1838,8 @@
     const equalsEl = document.getElementById('act0-equals-symbol');
     if (plusEl) plusEl.classList.remove('symbol-glow', 'highlighted');
     if (equalsEl) equalsEl.classList.remove('symbol-glow', 'highlighted');
+
+    teacherHand0.pointToNextTarget();
   }
 
   function triggerCountingHint0() {
@@ -1605,9 +1897,15 @@
         flowerEl.dataset.countOrder = count;
         flowerEl.classList.remove('uncounted');
 
-        // In Activity 0, flower centres remain completely blank throughout
+        // Guide hand points to currently narrated flower
+        teacherHand0.pointTo(flowerEl);
+
+        // In Activity 0, flower centres remain blank while numbers reveal in Answer Box
         state0.boxCounters['act0-flower-group-1'] = count;
         audio0.playPop(count);
+
+        // Reveal number inside Answer Box flower
+        revealAnswerBoxFlowerNumber0(count);
 
         teacherVoice0.countFlower(count, () => {
           if (!checkActive()) return;
@@ -1640,6 +1938,7 @@
       // Phase 2: Plus Sign Glow & Narration
       if (plusEl) {
         plusEl.classList.add('symbol-glow', 'highlighted');
+        teacherHand0.pointTo(plusEl);
       }
       audio0.playPop(1);
 
@@ -1661,6 +1960,7 @@
       if (g2Idx < q.num2 && g2Idx < g2Flowers.length) {
         const flowerEl = g2Flowers[g2Idx];
         const count = g2Idx + 1;
+        const cumulativeCount = q.num1 + count;
 
         document.querySelectorAll('#activity-0-container .flower-token.highlighted').forEach(el => {
           el.classList.remove('highlighted');
@@ -1668,14 +1968,20 @@
 
         flowerEl.classList.add('highlighted', 'tapped', 'revealed');
         flowerEl.dataset.counted = 'true';
-        flowerEl.dataset.countOrder = count;
+        flowerEl.dataset.countOrder = String(cumulativeCount);
         flowerEl.classList.remove('uncounted');
 
-        // In Activity 0, flower centres remain completely blank throughout
-        state0.boxCounters['act0-flower-group-2'] = count;
-        audio0.playPop(count);
+        // Guide hand points to currently narrated flower
+        teacherHand0.pointTo(flowerEl);
 
-        teacherVoice0.countFlower(count, () => {
+        // Second group counting continues from where first group ended
+        state0.boxCounters['act0-flower-group-2'] = count;
+        audio0.playPop(cumulativeCount);
+
+        // Reveal number inside Answer Box flower
+        revealAnswerBoxFlowerNumber0(cumulativeCount);
+
+        teacherVoice0.countFlower(cumulativeCount, () => {
           if (!checkActive()) return;
           g2Idx++;
           if (g2Idx < q.num2 && g2Idx < g2Flowers.length) {
@@ -1701,11 +2007,12 @@
         box2El.classList.add('box-completed');
       }
 
-      state0.currentStage = 'counting_total';
+      state0.currentStage = 'total_announced';
 
       // Phase 4: Equals Sign Glow & Narration
       if (equalsEl) {
         equalsEl.classList.add('symbol-glow', 'highlighted');
+        teacherHand0.pointTo(equalsEl);
       }
       audio0.playPop(1);
 
@@ -1714,49 +2021,12 @@
         setHintTimeout0(() => {
           if (!checkActive()) return;
           if (equalsEl) equalsEl.classList.remove('symbol-glow', 'highlighted');
-          if (resBox) resBox.classList.add('counting-active');
-          countNextTotalFlower();
+          stepCompleteTotal();
         }, 500);
       });
     }
 
-    // Phase 5: Count Combined Total Flowers in Answer Box
-    function countNextTotalFlower() {
-      if (!checkActive()) return;
-
-      const resFlowers = resBox ? Array.from(resBox.querySelectorAll('.flower-token')) : [];
-      if (totalIdx < q.answer && totalIdx < resFlowers.length) {
-        const flowerEl = resFlowers[totalIdx];
-        const count = totalIdx + 1;
-
-        document.querySelectorAll('#activity-0-container .flower-token.highlighted').forEach(el => {
-          el.classList.remove('highlighted');
-        });
-
-        flowerEl.classList.add('highlighted', 'tapped', 'revealed');
-        flowerEl.dataset.counted = 'true';
-        flowerEl.dataset.countOrder = count;
-        flowerEl.classList.remove('uncounted');
-
-        // In Activity 0, flower centres remain completely blank throughout
-        state0.boxCounters['act0-flower-group-result'] = count;
-        audio0.playPop(count);
-
-        teacherVoice0.countFlower(count, () => {
-          if (!checkActive()) return;
-          totalIdx++;
-          if (totalIdx < q.answer && totalIdx < resFlowers.length) {
-            setHintTimeout0(countNextTotalFlower, 600);
-          } else {
-            setHintTimeout0(stepCompleteTotal, 700);
-          }
-        });
-      } else {
-        setHintTimeout0(stepCompleteTotal, 700);
-      }
-    }
-
-    // Phase 6: Announce Total and Invite Answer Selection
+    // Phase 5: Announce Total and Invite Answer Selection
     function stepCompleteTotal() {
       if (!checkActive()) return;
 
@@ -1779,6 +2049,7 @@
         if (!checkActive()) return;
         setAnswerButtonsEnabled0(true);
         highlightCorrectAnswerButton0();
+        teacherHand0.pointToNextTarget();
         state0.isCountingHintActive = false;
         if (hintBtn) {
           hintBtn.classList.remove('hint-active');
@@ -1821,12 +2092,40 @@
     if (shouldScroll && card0 && typeof card0.scrollIntoView === 'function') {
       card0.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+
+    setTimeout(() => {
+      teacherHand0.show();
+      teacherHand0.pointToNextTarget();
+    }, 120);
   }
 
   // =========================================================================
   // INITIALIZATION & EVENT LISTENERS
   // =========================================================================
   function initActivity0() {
+    // 0. Initialize Teacher Hand
+    teacherHand0.init();
+
+    // Activities Dropdown sync for teacher hand
+    const dropdownItems = (typeof document.querySelectorAll === 'function')
+      ? document.querySelectorAll('.activity-dropdown-item')
+      : [];
+    if (dropdownItems && dropdownItems.forEach) {
+      dropdownItems.forEach(item => {
+        item.addEventListener('click', () => {
+          const act = item.dataset.activity;
+          if (act !== '0') {
+            teacherHand0.hide();
+          } else {
+            setTimeout(() => {
+              teacherHand0.show();
+              teacherHand0.pointToNextTarget();
+            }, 120);
+          }
+        });
+      });
+    }
+
     // 1. Single "Count Again" Button in Activity 0
     const countAgainBtn = document.getElementById('btn-act0-count-again');
     if (countAgainBtn) {
@@ -1893,8 +2192,11 @@
     window.TenaliTriggerCountingHint0 = triggerCountingHint0;
     window.TenaliStopCountingHint0 = stopCountingHint0;
     window.TenaliTeacherVoice0 = teacherVoice0;
+    window.TenaliTeacherHand0 = teacherHand0;
     window.TenaliState0 = state0;
     window.TenaliRenderQuestion0 = renderQuestion0;
+    window.TenaliTriggerLevelComplete0 = triggerLevelComplete0;
+    window.TenaliSpawnAnswerBoxFlower0 = spawnAnswerBoxFlower0;
     window.TenaliSetAnswerButtonsEnabled0 = setAnswerButtonsEnabled0;
     window.TenaliGetCurrentTheme0 = getCurrentTheme0;
     window.TenaliThemes0 = ACTIVITY0_THEMES;

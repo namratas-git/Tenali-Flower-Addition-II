@@ -45,7 +45,10 @@
     hintInterval: null,
     currentStage: 'group1', // 'group1' -> 'group2' -> 'counting_total' -> 'total_announced' -> 'answer'
     isAnswerSelectionEnabled: false,
-    hasAnnouncedTotal: false
+    hasAnnouncedTotal: false,
+    hasSpokenPlus: false,
+    hasSpokenEquals: false,
+    isOperatorSpeaking: false
   };
 
   // =========================================================================
@@ -446,8 +449,9 @@
       return words[n] || n.toString();
     }
 
-    speak(text, onEnd) {
+    speak(text, onEnd = null, onStart = null) {
       if (!state.voiceEnabled || !('speechSynthesis' in window)) {
+        if (onStart) onStart();
         if (onEnd) onEnd();
         return;
       }
@@ -480,6 +484,15 @@
         utterance.pitch = 1.08; // Exact Activity I pitch: warm, friendly, gentle teacher pitch
         utterance.volume = 1.0;
 
+        let startFired = false;
+        const triggerStart = () => {
+          if (startFired) return;
+          startFired = true;
+          if (onStart) onStart();
+        };
+
+        utterance.onstart = triggerStart;
+
         let called = false;
         const cleanup = () => {
           if (called) return;
@@ -498,10 +511,22 @@
         setTimeout(cleanup, 4500);
 
         window.speechSynthesis.speak(utterance);
+
+        // Immediate/near-immediate fallback for browsers that delay or drop onstart
+        setTimeout(triggerStart, 40);
       } catch (e) {
         console.warn('Teacher voice synthesis error:', e);
+        if (onStart) onStart();
         if (onEnd) onEnd();
       }
+    }
+
+    sayPlus(onStart = null, onEnd = null) {
+      this.speak("Plus", onEnd, onStart);
+    }
+
+    sayEquals(onStart = null, onEnd = null) {
+      this.speak("Equals", onEnd, onStart);
     }
 
     // 1. Welcome Interaction (Exact Activity I)
@@ -876,9 +901,25 @@
   // EQUATION SYMBOLS GLOW & COUNTING HINT CONTROLS
   // Provides gentle, noticeable glow to guide attention through addition steps
   // =========================================================================
+  function getAct1PlusSymbol() {
+    const actContainer = document.getElementById('flower-activity-container');
+    if (actContainer) {
+      return actContainer.querySelector('.math-plus-symbol');
+    }
+    return document.querySelector('#flower-equation-wrapper .math-plus-symbol');
+  }
+
+  function getAct1EqualsSymbol() {
+    const actContainer = document.getElementById('flower-activity-container');
+    if (actContainer) {
+      return actContainer.querySelector('.math-equals-symbol');
+    }
+    return document.querySelector('#flower-equation-wrapper .math-equals-symbol');
+  }
+
   function resetEquationSymbolsGlow() {
-    const plusElem = document.querySelector('.math-plus-symbol');
-    const equalsElem = document.querySelector('.math-equals-symbol');
+    const plusElem = getAct1PlusSymbol();
+    const equalsElem = getAct1EqualsSymbol();
     if (plusElem) {
       plusElem.classList.remove('symbol-glow', 'highlighted');
     }
@@ -1001,7 +1042,7 @@
   // Child can tap revealed flowers in any order; numbers (1, 2, 3...) are assigned
   // sequentially according to tap order.
   function handleCombinedFlowerTap(flowerEl) {
-    if (state.isAnswered || state.isCountingHintActive) return;
+    if (state.isAnswered || state.isCountingHintActive || state.isOperatorSpeaking) return;
 
     // Stage gating: Can only count total flowers once both groups are completed
     if (state.currentStage !== 'counting_total') {
@@ -1158,11 +1199,15 @@
     state.currentStage = 'group1';
     state.isAnswerSelectionEnabled = false;
     state.hasAnnouncedTotal = false;
+    state.hasSpokenPlus = false;
+    state.hasSpokenEquals = false;
+    state.isOperatorSpeaking = false;
 
     clearAnnouncementTimers();
 
     // Reset any active hint and equation symbol glows
     stopCountingHint();
+    resetEquationSymbolsGlow();
 
     // Reset per-box counters and active counting sequence
     state.boxCounters = {
@@ -1319,7 +1364,7 @@
   // Count First Group -> Count Second Group -> Count Combined Total Flowers -> Select Correct Answer
   // Each valid tap in First or Second Group automatically reveals one unnumbered flower in Combined Total box!
   function handleFlowerTap(flowerEl, boxId) {
-    if (state.isAnswered || state.isCountingHintActive) return;
+    if (state.isAnswered || state.isCountingHintActive || state.isOperatorSpeaking) return;
 
     if (boxId === 'flower-group-result') {
       handleCombinedFlowerTap(flowerEl);
@@ -1400,7 +1445,6 @@
 
     // Spoken number and cheerful pop sound
     audio.playPop(currentCount);
-    teacherVoice.countFlower(currentCount);
 
     // Stage Two: Automatically Reveal exactly one corresponding flower into Combined Total box
     spawnUnnumberedTotalFlower();
@@ -1409,44 +1453,90 @@
 
     // --- Box Completion Checks ---
     if (boxId === 'flower-group-1') {
-      if (state.boxCounters['flower-group-1'] >= q.num1) {
+      const isGroup1Done = state.boxCounters['flower-group-1'] >= q.num1;
+      if (isGroup1Done) {
         if (boxEl) {
           boxEl.classList.remove('counting-active');
           boxEl.classList.add('box-completed');
         }
-        // Group 1 complete: Activate gentle glow on plus (+) sign!
-        const plusElem = document.querySelector('.math-plus-symbol');
-        if (plusElem) {
-          plusElem.classList.add('symbol-glow');
-        }
-        // Advance stage to Group 2, unlock active box
-        state.currentStage = 'group2';
-        state.activeCountingBox = null;
+        // Lock user interaction while operator speaks to prevent premature taps
+        state.isOperatorSpeaking = true;
+
+        // Wait until flower count speech finishes, then say "Plus" with synchronised glow
+        teacherVoice.countFlower(currentCount, () => {
+          if (state.hasSpokenPlus) {
+            state.isOperatorSpeaking = false;
+            return;
+          }
+          state.hasSpokenPlus = true;
+          const plusElem = getAct1PlusSymbol();
+          teacherVoice.sayPlus(
+            () => {
+              // onStart: activate gentle glow around plus symbol for the duration of the spoken word
+              if (plusElem) {
+                plusElem.classList.add('symbol-glow');
+              }
+            },
+            () => {
+              // onEnd: remove glow once voice finishes saying "Plus", then guide child to Group 2
+              if (plusElem) {
+                plusElem.classList.remove('symbol-glow');
+              }
+              state.currentStage = 'group2';
+              state.activeCountingBox = null;
+              state.isOperatorSpeaking = false;
+              const box2El = document.getElementById('flower-group-2');
+              if (box2El) {
+                box2El.classList.add('counting-active');
+              }
+            }
+          );
+        });
+      } else {
+        teacherVoice.countFlower(currentCount);
       }
     } else if (boxId === 'flower-group-2') {
-      if (state.boxCounters['flower-group-2'] >= q.num2) {
+      const isGroup2Done = state.boxCounters['flower-group-2'] >= q.num2;
+      if (isGroup2Done) {
         if (boxEl) {
           boxEl.classList.remove('counting-active');
           boxEl.classList.add('box-completed');
         }
-        // Group 2 complete: Turn off plus glow, activate gentle glow on equals (=) sign!
-        const plusElem = document.querySelector('.math-plus-symbol');
-        if (plusElem) {
-          plusElem.classList.remove('symbol-glow');
-        }
-        const equalsElem = document.querySelector('.math-equals-symbol');
-        if (equalsElem) {
-          equalsElem.classList.add('symbol-glow');
-        }
-        // Advance stage to counting_total, unlock active box
-        state.currentStage = 'counting_total';
-        state.activeCountingBox = null;
+        // Lock user interaction while operator speaks to prevent premature taps
+        state.isOperatorSpeaking = true;
 
-        // Highlight Combined Total box to invite child to count the total flowers
-        const resBox = document.getElementById('flower-group-result');
-        if (resBox) {
-          resBox.classList.add('counting-active');
-        }
+        // Wait until flower count speech finishes, then say "Equals" with synchronised glow
+        teacherVoice.countFlower(currentCount, () => {
+          if (state.hasSpokenEquals) {
+            state.isOperatorSpeaking = false;
+            return;
+          }
+          state.hasSpokenEquals = true;
+          const equalsElem = getAct1EqualsSymbol();
+          teacherVoice.sayEquals(
+            () => {
+              // onStart: activate gentle glow around equals symbol for the duration of the spoken word
+              if (equalsElem) {
+                equalsElem.classList.add('symbol-glow');
+              }
+            },
+            () => {
+              // onEnd: remove glow once voice finishes saying "Equals", then invite child to Combined Total
+              if (equalsElem) {
+                equalsElem.classList.remove('symbol-glow');
+              }
+              state.currentStage = 'counting_total';
+              state.activeCountingBox = null;
+              state.isOperatorSpeaking = false;
+              const resBox = document.getElementById('flower-group-result');
+              if (resBox) {
+                resBox.classList.add('counting-active');
+              }
+            }
+          );
+        });
+      } else {
+        teacherVoice.countFlower(currentCount);
       }
     }
   }
@@ -1476,6 +1566,9 @@
     state.currentStage = 'group1';
     state.isAnswered = false;
     state.hasAnnouncedTotal = false;
+    state.hasSpokenPlus = false;
+    state.hasSpokenEquals = false;
+    state.isOperatorSpeaking = false;
 
     // Reset equation symbol glows
     resetEquationSymbolsGlow();
@@ -1743,8 +1836,8 @@
     const resBox = document.getElementById('flower-group-result');
     const g1Flowers = box1El ? Array.from(box1El.querySelectorAll('.flower-token')) : [];
     const g2Flowers = box2El ? Array.from(box2El.querySelectorAll('.flower-token')) : [];
-    const plusElem = document.querySelector('.math-plus-symbol');
-    const equalsElem = document.querySelector('.math-equals-symbol');
+    const plusElem = getAct1PlusSymbol();
+    const equalsElem = getAct1EqualsSymbol();
 
     function checkActive() {
       return !!state.isCountingHintActive;
@@ -1823,17 +1916,16 @@
       });
 
       if (plusElem) {
-        plusElem.classList.add('symbol-glow', 'highlighted');
+        plusElem.classList.add('symbol-glow');
       }
       state.currentStage = 'group2';
       audio.playPop(1);
 
-      // Teacher says "Plus!" and waits until speech finishes + 500ms pause (matching Activities 2 & 3)
-      teacherVoice.speak("Plus!", () => {
+      // Teacher says "Plus" and removes glow when speech completes
+      teacherVoice.sayPlus(null, () => {
         if (!checkActive()) return;
         if (plusElem) {
-          plusElem.classList.remove('highlighted');
-          plusElem.classList.add('symbol-glow');
+          plusElem.classList.remove('symbol-glow', 'highlighted');
         }
         setHintTimeout(stepGroup2, 500);
       });
@@ -1920,17 +2012,16 @@
         plusElem.classList.remove('symbol-glow', 'highlighted');
       }
       if (equalsElem) {
-        equalsElem.classList.add('symbol-glow', 'highlighted');
+        equalsElem.classList.add('symbol-glow');
       }
       state.currentStage = 'counting_total';
       audio.playPop(1);
 
-      // Teacher speaks "Equals" and waits until speech finishes + 500ms pause (matching Activities 2 & 3)
-      teacherVoice.speak("Equals", () => {
+      // Teacher speaks "Equals" and removes glow when speech completes
+      teacherVoice.sayEquals(null, () => {
         if (!checkActive()) return;
         if (equalsElem) {
-          equalsElem.classList.remove('highlighted');
-          equalsElem.classList.add('symbol-glow');
+          equalsElem.classList.remove('symbol-glow', 'highlighted');
         }
         setHintTimeout(stepCountTotal, 500);
       });
@@ -2377,6 +2468,7 @@
     window.TenaliResetActivity1RoundCounting = (silent = true) => resetRoundCounting(silent);
     window.TenaliState1 = state;
     window.TenaliRenderQuestion1 = renderQuestion;
+    window.TenaliTeacherVoice1 = teacherVoice;
   }
 
   // Start when DOM is ready

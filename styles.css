@@ -925,6 +925,90 @@ body {
   100% { transform: scale(1.08) translateY(-3px); }
 }
 
+/* Activity 1 Scoped Math Operator Glow:
+   Gentle, soft pulsing highlight around plus and equals without moving, resizing, or shifting position */
+#flower-activity-container .math-operator-symbol.symbol-glow {
+  transform: none !important;
+  color: #f59e0b;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.9),
+               0 0 30px rgba(251, 191, 36, 0.75),
+               0 2px 6px rgba(194, 65, 12, 0.3);
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.85));
+  animation: act1-operator-glow-pulse 1.2s ease-in-out infinite alternate !important;
+  z-index: 5;
+}
+
+@keyframes act1-operator-glow-pulse {
+  0% {
+    transform: none;
+    text-shadow: 0 0 12px rgba(245, 158, 11, 0.75),
+                 0 0 22px rgba(251, 191, 36, 0.55);
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+  }
+  100% {
+    transform: none;
+    text-shadow: 0 0 20px rgba(245, 158, 11, 1),
+                 0 0 36px rgba(251, 191, 36, 0.85);
+    filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.95));
+  }
+}
+
+/* Activity 2 Scoped Math Operator Glow:
+   Gentle, soft pulsing highlight around plus and equals without moving, resizing, or shifting position */
+#flower-merge-activity-container .math-operator-symbol.symbol-glow {
+  transform: none !important;
+  color: #f59e0b;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.9),
+               0 0 30px rgba(251, 191, 36, 0.75),
+               0 2px 6px rgba(194, 65, 12, 0.3);
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.85));
+  animation: act2-operator-glow-pulse 1.2s ease-in-out infinite alternate !important;
+  z-index: 5;
+}
+
+@keyframes act2-operator-glow-pulse {
+  0% {
+    transform: none;
+    text-shadow: 0 0 12px rgba(245, 158, 11, 0.75),
+                 0 0 22px rgba(251, 191, 36, 0.55);
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+  }
+  100% {
+    transform: none;
+    text-shadow: 0 0 20px rgba(245, 158, 11, 1),
+                 0 0 36px rgba(251, 191, 36, 0.85);
+    filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.95));
+  }
+}
+
+/* Activity 3 Scoped Math Operator Glow:
+   Gentle, soft pulsing highlight around plus and equals without moving, resizing, or shifting position */
+#flower-merge-3-activity-container .math-operator-symbol.symbol-glow {
+  transform: none !important;
+  color: #f59e0b;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.9),
+               0 0 30px rgba(251, 191, 36, 0.75),
+               0 2px 6px rgba(194, 65, 12, 0.3);
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.85));
+  animation: act3-operator-glow-pulse 1.2s ease-in-out infinite alternate !important;
+  z-index: 5;
+}
+
+@keyframes act3-operator-glow-pulse {
+  0% {
+    transform: none;
+    text-shadow: 0 0 12px rgba(245, 158, 11, 0.75),
+                 0 0 22px rgba(251, 191, 36, 0.55);
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+  }
+  100% {
+    transform: none;
+    text-shadow: 0 0 20px rgba(245, 158, 11, 1),
+                 0 0 36px rgba(251, 191, 36, 0.85);
+    filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.95));
+  }
+}
+
 /* ==========================================================================
    FLOWER COMPONENT (Purple Petals, Yellow Center, Number Inside)
    Scalloped petals, vibrant yellow disc, number inside yellow center
@@ -2309,24 +2393,11 @@ body {
    ========================================================================== */
 .activity-0-card {
   position: relative;
-  padding: 18px 24px 32px 24px;
-}
-
-.activity-0-card .act0-top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-  min-height: 34px;
-  margin-bottom: 8px;
-}
-
-.activity-0-card .act0-top-bar .activity-count-again-btn {
-  position: static;
+  overflow: hidden;
 }
 
 .activity-0-card .flower-equation-wrapper {
-  margin: 4px 0 24px 0;
+  margin: 18px 0 24px 0;
 }
 
 .activity-0-card::before {
@@ -2337,6 +2408,21 @@ body {
   right: 0;
   height: 6px;
   background: linear-gradient(90deg, #f85656 0%, #ffd54f 50%, #48bb78 100%);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+@media (max-width: 720px) {
+  .activity-0-card .flower-equation-wrapper {
+    margin: 14px 0 16px 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .activity-0-card::before {
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
 }
 
 .activity-0-card .flower-group-box {
@@ -2420,6 +2506,26 @@ body {
   0% { transform: scale(0.92); }
   50% { transform: scale(1.14); }
   100% { transform: scale(1); }
+}
+
+/* Dynamic pop-in spawn animation for newly appearing flowers in Activity 0 Answer Box */
+.activity-0-card #act0-flower-group-result .flower-token.act0-spawn-pop {
+  animation: act0-flower-spawn-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes act0-flower-spawn-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .activity-0-card .flower-token.highlighted {
@@ -2552,6 +2658,7 @@ body {
   font-weight: 800;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   box-shadow: 0 2px 8px rgba(22, 163, 74, 0.08);
   animation: slide-fade-in 0.35s ease-out;
@@ -2625,6 +2732,70 @@ body {
   .activity-0-card .act0-next-round-btn {
     font-size: 16px;
     padding: 10px 24px;
+  }
+}
+
+/* ==========================================================================
+   ACTIVITY 0: GUIDED INTERACTIVE TEACHER HAND
+   ========================================================================== */
+.act0-teacher-hand {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 62px;
+  height: auto;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0;
+  visibility: hidden;
+  transition: left 0.38s cubic-bezier(0.25, 1, 0.5, 1),
+              top 0.38s cubic-bezier(0.25, 1, 0.5, 1),
+              opacity 0.25s ease,
+              visibility 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.act0-teacher-hand.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.act0-teacher-hand .act0-hand-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.16));
+  animation: act0-hand-bounce 1.15s infinite ease-in-out;
+  transform-origin: 35% 0%;
+}
+
+@keyframes act0-hand-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (max-width: 900px) {
+  .act0-teacher-hand {
+    width: 54px;
+  }
+}
+
+@media (max-width: 640px) {
+  .act0-teacher-hand {
+    width: 46px;
+  }
+  @keyframes act0-hand-bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
   }
 }
 

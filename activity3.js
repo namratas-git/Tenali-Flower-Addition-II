@@ -86,7 +86,10 @@
     isAnswerSelectionEnabled: false,
     announcementTimer: null,
     nextQuestionTimer: null,
-    staggerTimers: []
+    staggerTimers: [],
+    hasSpokenPlus: false,
+    hasSpokenEquals: false,
+    isOperatorSpeaking: false
   };
 
   // Active activity tracker: 'activity1' or 'activity2'
@@ -465,8 +468,9 @@
       this.activeUtterance = null;
     }
 
-    speak(text, onEnd) {
+    speak(text, onEnd = null, onStart = null) {
       if (!this.isVoiceOn() || !('speechSynthesis' in window)) {
+        if (onStart) onStart();
         if (onEnd) onEnd();
         return;
       }
@@ -496,6 +500,15 @@
         utterance.pitch = 1.08; // gentle, warm pitch
         utterance.volume = 1.0;
 
+        let startFired = false;
+        const triggerStart = () => {
+          if (startFired) return;
+          startFired = true;
+          if (onStart) onStart();
+        };
+
+        utterance.onstart = triggerStart;
+
         let called = false;
         const cleanup = () => {
           if (called) return;
@@ -511,10 +524,22 @@
         setTimeout(cleanup, 4500);
 
         window.speechSynthesis.speak(utterance);
+
+        // Immediate/near-immediate fallback for browsers that delay or drop onstart
+        setTimeout(triggerStart, 40);
       } catch (e) {
         console.warn('Teacher voice synthesis error in Activity 3:', e);
+        if (onStart) onStart();
         if (onEnd) onEnd();
       }
+    }
+
+    sayPlus(onStart = null, onEnd = null) {
+      this.speak("Plus", onEnd, onStart);
+    }
+
+    sayEquals(onStart = null, onEnd = null) {
+      this.speak("Equals", onEnd, onStart);
     }
 
     countFlower(n) {
@@ -985,9 +1010,17 @@
     clearConfetti();
   }
 
+  function getMergePlusSymbol() {
+    return document.getElementById('merge-3-plus-symbol');
+  }
+
+  function getMergeEqualsSymbol() {
+    return document.getElementById('merge-3-equals-symbol');
+  }
+
   function resetMergeSymbolsGlow() {
-    const plusElem = document.getElementById('merge-3-plus-symbol');
-    const equalsElem = document.getElementById('merge-3-equals-symbol');
+    const plusElem = getMergePlusSymbol();
+    const equalsElem = getMergeEqualsSymbol();
     if (plusElem) plusElem.classList.remove('symbol-glow', 'highlighted');
     if (equalsElem) equalsElem.classList.remove('symbol-glow', 'highlighted');
   }
@@ -1116,6 +1149,9 @@
     mergeState.hasMerged = false;
     mergeState.hasAnnouncedTotal = false;
     mergeState.isAnswerSelectionEnabled = false;
+    mergeState.hasSpokenPlus = false;
+    mergeState.hasSpokenEquals = false;
+    mergeState.isOperatorSpeaking = false;
 
     const q = mergeState.currentQuestion;
     if (!q) return;
@@ -1280,7 +1316,7 @@
    * Can be tapped first or second.
    */
   function handleFlower1Tap() {
-    if (mergeState.isAnswered || mergeState.isHintActive || mergeState.isSpawningAddend) return;
+    if (mergeState.isAnswered || mergeState.isHintActive || mergeState.isSpawningAddend || mergeState.isOperatorSpeaking) return;
 
     const q = mergeState.currentQuestion;
     if (!q) return;
@@ -1364,7 +1400,7 @@
    * Can be tapped first or second.
    */
   function handleFlower2Tap() {
-    if (mergeState.isAnswered || mergeState.isHintActive || mergeState.isSpawningAddend) return;
+    if (mergeState.isAnswered || mergeState.isHintActive || mergeState.isSpawningAddend || mergeState.isOperatorSpeaking) return;
 
     const q = mergeState.currentQuestion;
     if (!q) return;
@@ -1441,6 +1477,11 @@
 
   /**
    * Checks whether both original flowers have been fully counted.
+   * Preserves child's freedom to complete either group first:
+   * - Whichever group is completed first triggers spoken "Plus" and glowing + symbol.
+   * - When "Plus" finishes speaking, glow removes and child is guided to the remaining group.
+   * - When the remaining group is completed, triggers spoken "Equals" and glowing = symbol.
+   * - When "Equals" finishes speaking, glow removes and child is guided to Answer Box.
    */
   function checkAddendsProgress() {
     const q = mergeState.currentQuestion;
@@ -1449,29 +1490,71 @@
     const f1Done = mergeState.flower1Counted || (mergeState.flower1Taps >= q.num1);
     const f2Done = mergeState.flower2Counted || (mergeState.flower2Taps >= q.num2);
 
-    const plusElem = document.getElementById('merge-3-plus-symbol');
-    const equalsElem = document.getElementById('merge-3-equals-symbol');
+    const plusElem = getMergePlusSymbol();
+    const equalsElem = getMergeEqualsSymbol();
 
+    // Case 1: First group completed (whichever group the child chose first)
     if ((f1Done && !f2Done) || (f2Done && !f1Done)) {
-      if (plusElem) plusElem.classList.add('symbol-glow');
-      if (equalsElem) equalsElem.classList.remove('symbol-glow');
-      saveMergeProgress();
+      if (!mergeState.hasSpokenPlus) {
+        mergeState.hasSpokenPlus = true;
+        mergeState.isOperatorSpeaking = true;
+
+        mergeTeacherVoice.sayPlus(
+          () => {
+            // onStart: + symbol glows softly while "Plus" is spoken
+            if (plusElem) plusElem.classList.add('symbol-glow');
+          },
+          () => {
+            // onEnd: remove glow once voice finishes saying "Plus", then guide child to remaining group
+            if (plusElem) plusElem.classList.remove('symbol-glow');
+            mergeState.isOperatorSpeaking = false;
+
+            // Guide child towards the remaining uncounted group
+            const remainingBoxId = !f1Done ? 'merge-3-flower-1-box' : 'merge-3-flower-2-box';
+            const remainingBox = document.getElementById(remainingBoxId);
+            if (remainingBox) {
+              remainingBox.classList.remove('box-attention');
+              void remainingBox.offsetWidth;
+              remainingBox.classList.add('box-attention');
+              setTimeout(() => remainingBox.classList.remove('box-attention'), 600);
+            }
+            saveMergeProgress();
+          }
+        );
+      }
       return;
     }
 
+    // Case 2: Both groups now completed!
     if (f1Done && f2Done) {
-      if (plusElem) plusElem.classList.remove('symbol-glow');
-      if (equalsElem) equalsElem.classList.add('symbol-glow');
+      if (!mergeState.hasSpokenEquals) {
+        mergeState.hasSpokenEquals = true;
+        mergeState.isOperatorSpeaking = true;
 
-      mergeState.stage = 'counting_total';
-      const resBox = document.getElementById('merge-3-answer-box');
-      if (resBox) {
-        resBox.classList.add('counting-active');
+        // Ensure plus symbol glow is definitely off
+        if (plusElem) plusElem.classList.remove('symbol-glow');
+
+        mergeTeacherVoice.sayEquals(
+          () => {
+            // onStart: = symbol glows softly while "Equals" is spoken
+            if (equalsElem) equalsElem.classList.add('symbol-glow');
+          },
+          () => {
+            // onEnd: remove glow once voice finishes saying "Equals", then guide child to Answer Box
+            if (equalsElem) equalsElem.classList.remove('symbol-glow');
+            mergeState.isOperatorSpeaking = false;
+            mergeState.stage = 'counting_total';
+
+            const resBox = document.getElementById('merge-3-answer-box');
+            if (resBox) {
+              resBox.classList.add('counting-active');
+            }
+            saveMergeProgress();
+          }
+        );
       }
-      saveMergeProgress();
     } else {
-      if (plusElem) plusElem.classList.remove('symbol-glow');
-      if (equalsElem) equalsElem.classList.remove('symbol-glow');
+      resetMergeSymbolsGlow();
       saveMergeProgress();
     }
   }
@@ -1481,7 +1564,7 @@
    * Child taps each revealed flower in the Answer Box (starts at 1)
    */
   function handleAnswerBoxFlowerTap(flowerEl) {
-    if (mergeState.isAnswered || mergeState.isHintActive) return;
+    if (mergeState.isAnswered || mergeState.isHintActive || mergeState.isOperatorSpeaking) return;
 
     if (mergeState.stage !== 'counting_total') {
       const q = mergeState.currentQuestion;
@@ -1865,6 +1948,9 @@
     mergeState.hasMerged = false;
     mergeState.hasAnnouncedTotal = false;
     mergeState.isAnswerSelectionEnabled = false;
+    mergeState.hasSpokenPlus = false;
+    mergeState.hasSpokenEquals = false;
+    mergeState.isOperatorSpeaking = false;
     mergeState.isAnswered = false;
     mergeState.selectedAnswer = null;
     mergeState.stage = 'counting_addends';
@@ -2020,26 +2106,26 @@
     // =========================================================================
     // 2. Plus Sign – Addition Instruction
     // =========================================================================
-    if (!hasMerged && !f2Done) {
+    if (!hasMerged && (!f2Done || !mergeState.hasSpokenPlus)) {
       sequence.push({
         name: 'step2-plus-sign',
         run: (next) => {
           if (!checkActive()) return;
           clearHintHighlights();
-          if (plusElem) {
-            plusElem.classList.add('symbol-glow', 'highlighted');
-          }
           mergeAudio.playPop(1);
+          mergeState.hasSpokenPlus = true;
 
-          // Teacher says: "Plus."
-          mergeTeacherVoice.speak("Plus.", () => {
-            if (!checkActive()) return;
-            // Wait until voice has finished speaking before proceeding to Second Group
-            if (plusElem) {
-              plusElem.classList.remove('symbol-glow', 'highlighted');
+          // Teacher says: "Plus"
+          mergeTeacherVoice.sayPlus(
+            () => {
+              if (plusElem) plusElem.classList.add('symbol-glow');
+            },
+            () => {
+              if (!checkActive()) return;
+              if (plusElem) plusElem.classList.remove('symbol-glow', 'highlighted');
+              setHintTimeout(next, 500);
             }
-            setHintTimeout(next, 500);
-          });
+          );
         }
       });
     }
@@ -2115,27 +2201,26 @@
     // =========================================================================
     // 4. Equals Sign – Addition Instruction
     // =========================================================================
-    if (!hasMerged) {
+    if (!hasMerged && !mergeState.hasSpokenEquals) {
       sequence.push({
         name: 'step-equals-sign',
         run: (next) => {
           if (!checkActive()) return;
           clearHintHighlights();
-          if (equalsElem) {
-            equalsElem.classList.add('symbol-glow', 'highlighted');
-          }
           mergeAudio.playPop(1);
+          mergeState.hasSpokenEquals = true;
 
           // Teacher speaks equals aloud: "Equals" (matching Activity 1 audio behaviour & cadence)
-          mergeTeacherVoice.speak("Equals", () => {
-            if (!checkActive()) return;
-            // Wait until the spoken word has completely finished before proceeding to next counting step
-            if (equalsElem) {
-              equalsElem.classList.remove('highlighted');
-              equalsElem.classList.add('symbol-glow');
+          mergeTeacherVoice.sayEquals(
+            () => {
+              if (equalsElem) equalsElem.classList.add('symbol-glow');
+            },
+            () => {
+              if (!checkActive()) return;
+              if (equalsElem) equalsElem.classList.remove('symbol-glow', 'highlighted');
+              setHintTimeout(next, 500);
             }
-            setHintTimeout(next, 500);
-          });
+          );
         }
       });
     }
@@ -2568,6 +2653,11 @@
       }
     }
   }
+
+  window.TenaliResetActivity3RoundCounting = resetMergeRoundCounting;
+  window.TenaliMergeTeacherVoice3 = mergeTeacherVoice;
+  window.TenaliRenderMergeQuestion3 = renderMergeQuestion;
+  window.TenaliCheckAddendsProgress3 = checkAddendsProgress;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initActivity3);

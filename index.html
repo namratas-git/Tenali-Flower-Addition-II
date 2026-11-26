@@ -141,16 +141,14 @@
            =================================================================== -->
       <section class="flower-activity-card activity-0-card" id="activity-0-container" aria-label="Activity 0: Coral Flower Addition Activity" style="display: none;">
         
-        <!-- Top Controls: Single "Count Again" Button on the Right -->
-        <div class="act0-top-bar">
-          <button type="button" class="activity-count-again-btn" id="btn-act0-count-again" title="Start counting this round again" aria-label="Count this round again">
-            <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
-              <path d="M2 3v6h6"/>
-            </svg>
-            <span>Count Again</span>
-          </button>
-        </div>
+        <!-- Single "Count Again" Button in Top-Right Corner of Activity Area -->
+        <button type="button" class="activity-count-again-btn" id="btn-act0-count-again" title="Start counting this round again" aria-label="Count this round again">
+          <svg class="recount-icon" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 2.6-6.4L2 9"/>
+            <path d="M2 3v6h6"/>
+          </svg>
+          <span>Count Again</span>
+        </button>
 
         <!-- ===============================================================
              VISUAL ADDITION EQUATION:
@@ -211,6 +209,11 @@
           <button id="btn-act0-count-hint" class="helper-action-btn" title="Light up flowers one by one across the equation">
             💡 Count with Me
           </button>
+        </div>
+
+        <!-- Guided Interactive Teacher Hand -->
+        <div class="act0-teacher-hand" id="act0-teacher-hand" aria-hidden="true">
+          <img src="assets/images/teacher_hand.png" alt="" class="act0-hand-img" id="act0-teacher-hand-img" />
         </div>
 
       </section>
