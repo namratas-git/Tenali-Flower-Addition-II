@@ -1143,9 +1143,9 @@
     flowerDiv.dataset.counted = 'true';
     flowerDiv.dataset.countOrder = String(seqNumber);
     flowerDiv.innerHTML = createCoralFlowerSVG({
-      number: seqNumber,
+      number: '',
       size: flowerPixelSize,
-      hideNumber: false
+      hideNumber: true
     });
 
     flowerDiv.addEventListener('click', () => {
@@ -1463,7 +1463,7 @@
       flowerEl.dataset.countOrder = String(currentCount);
       audio0.playPop(currentCount);
 
-      // On counting N, flower appears dynamically in Answer Box with number N inside circular centre
+      // On counting N, flower appears dynamically in Answer Box (without number inside circular centre)
       spawnAnswerBoxFlower0(currentCount);
 
       if (currentCount >= q.num1) {
@@ -1487,7 +1487,7 @@
       flowerEl.dataset.countOrder = String(cumulativeCount);
       audio0.playPop(cumulativeCount);
 
-      // Flower appears dynamically in Answer Box with cumulativeCount inside circular centre
+      // Flower appears dynamically in Answer Box (without number inside circular centre)
       spawnAnswerBoxFlower0(cumulativeCount);
 
       if (currentCount >= q.num2) {
@@ -1900,11 +1900,11 @@
         // Guide hand points to currently narrated flower
         teacherHand0.pointTo(flowerEl);
 
-        // In Activity 0, flower centres remain blank while numbers reveal in Answer Box
+        // In Activity 0, flowers appear dynamically in Answer Box
         state0.boxCounters['act0-flower-group-1'] = count;
         audio0.playPop(count);
 
-        // Reveal number inside Answer Box flower
+        // Dynamically spawn flower in Answer Box (without number)
         revealAnswerBoxFlowerNumber0(count);
 
         teacherVoice0.countFlower(count, () => {
@@ -1978,7 +1978,7 @@
         state0.boxCounters['act0-flower-group-2'] = count;
         audio0.playPop(cumulativeCount);
 
-        // Reveal number inside Answer Box flower
+        // Dynamically spawn flower in Answer Box (without number)
         revealAnswerBoxFlowerNumber0(cumulativeCount);
 
         teacherVoice0.countFlower(cumulativeCount, () => {
